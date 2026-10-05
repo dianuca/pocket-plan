@@ -184,3 +184,59 @@ class IncomeEditTests(TestCase):
 
         self.income.refresh_from_db()
         self.assertEqual(self.income.amount, Decimal("5000.00"))
+
+class IncomeDeleteTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.income = Income.objects.create(
+            owner=self.user,
+            source="Salariu",
+            amount=Decimal("5000.00"),
+            received_on=date(2026, 10, 5),
+        )
+
+    def test_get_displays_confirmation_without_deleting(self):
+        response = self.client.get(
+            f"/finances/incomes/{self.income.pk}/delete/",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "finances/income_confirm_delete.html",
+        )
+        self.assertTrue(
+            Income.objects.filter(pk=self.income.pk).exists(),
+        )
+
+    def test_post_deletes_income(self):
+        response = self.client.post(
+            f"/finances/incomes/{self.income.pk}/delete/",
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/incomes/?month=2026-10",
+        )
+        self.assertFalse(
+            Income.objects.filter(pk=self.income.pk).exists(),
+        )
+
+    def test_other_user_cannot_delete_income(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        response = self.client.post(
+            f"/finances/incomes/{self.income.pk}/delete/",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(
+            Income.objects.filter(pk=self.income.pk).exists(),
+        )
