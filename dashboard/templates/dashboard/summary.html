@@ -40,4 +40,15 @@
         {% endfor %}
     </ul>
     
+    <h2>Rate — date demonstrative</h2>
+
+    <p>Laptop</p>
+    <p>
+        De plată în luna selectată:
+        {{ installment_total|floatformat:2 }} lei
+    </p>
+    <p>
+        Rate rămase, inclusiv luna selectată:
+        {{ installments_remaining }}
+    </p>
 {% endblock %}
