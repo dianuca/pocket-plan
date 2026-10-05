@@ -26,3 +26,25 @@ class DashboardPageTests(SimpleTestCase):
             context["balance"],
             context["income"] - context["expenses"],
         )
+
+    def test_dashboard_uses_selected_month(self):
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["selected_month"],
+            "2026-10",
+        )
+        self.assertContains(response, 'type="month"')
+        self.assertContains(response, 'value="2026-10"')
+
+    def test_dashboard_rejects_invalid_month(self):
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2026-13"},
+        )
+
+        self.assertEqual(response.status_code, 400)
