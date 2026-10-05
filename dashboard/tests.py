@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from datetime import date
 from finances.models import Income
+from finances.models import Expense, Income
 
 class DashboardPageTests(TestCase):
     def test_dashboard_displays_monthly_summary(self):
@@ -57,13 +58,27 @@ class DashboardPageTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_dashboard_displays_expense_list(self):
-        response = self.client.get("/dashboard/")
+        owner = get_user_model().objects.get(username="testuser")
 
-        self.assertIn("expense_items", response.context)
-        self.assertContains(response, "Chirie")
-        self.assertContains(response, "Utilități")
-        self.assertContains(response, "Abonamente")
+        Expense.objects.create(
+            owner=owner,
+            name="Netflix",
+            category=Expense.Category.SUBSCRIPTIONS,
+            amount=Decimal("50.00"),
+            paid_on=date(2026, 10, 10),
+        )
 
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2026-10"},
+        )
+
+        self.assertContains(response, "Netflix")
+        self.assertEqual(
+            len(response.context["expense_items"]),
+            1,
+        )
+   
     def test_dashboard_includes_active_installment(self):
         response = self.client.get(
             "/dashboard/",
@@ -77,7 +92,7 @@ class DashboardPageTests(TestCase):
         )
         self.assertEqual(
             response.context["expenses"],
-            Decimal("3400.00"),
+            Decimal("200.00"),
         )
         self.assertContains(response, "Laptop")
 
@@ -94,7 +109,7 @@ class DashboardPageTests(TestCase):
         )
         self.assertEqual(
             response.context["expenses"],
-            Decimal("3200.00"),
+            Decimal("0.00"),
         )
 
     def setUp(self):
@@ -145,6 +160,41 @@ class DashboardPageTests(TestCase):
             response.context["income"],
             Decimal("5500.00"),
         )
+
+    def test_expenses_use_only_current_user_and_selected_month(self):
+        owner = get_user_model().objects.get(username="testuser")
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+
+        for user, name, amount, paid_on in [
+            (owner, "Netflix octombrie", "50.00", date(2026, 10, 10)),
+            (owner, "Internet octombrie", "100.00", date(2026, 10, 12)),
+            (owner, "Cheltuială septembrie", "900.00", date(2026, 9, 5)),
+            (other_user, "Cheltuială străină", "700.00", date(2026, 10, 5)),
+        ]:
+            Expense.objects.create(
+                owner=user,
+                name=name,
+                category=Expense.Category.SUBSCRIPTIONS,
+                amount=Decimal(amount),
+                paid_on=paid_on,
+            )
+
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["expenses"],
+            Decimal("350.00"),
+        )
+        self.assertContains(response, "Netflix octombrie")
+        self.assertContains(response, "Internet octombrie")
+        self.assertNotContains(response, "Cheltuială septembrie")
+        self.assertNotContains(response, "Cheltuială străină")
 
 class FinancialCalculationTests(SimpleTestCase):
     def test_calculates_expense_total(self):
