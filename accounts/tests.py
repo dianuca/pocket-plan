@@ -8,3 +8,12 @@ class LoginPageTests(SimpleTestCase):
         self.assertTemplateUsed(response, "registration/login.html")
         self.assertContains(response, 'name="username"')
         self.assertContains(response, 'name="password"')
+
+    def test_home_redirects_to_login(self):
+        response = self.client.get("/")
+
+        self.assertRedirects(
+            response,
+            "/accounts/login/",
+            status_code=302,
+        )
