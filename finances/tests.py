@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from .models import Income
 from .forms import IncomeForm
+from .models import Expense, Income
 
 
 class IncomeModelTests(TestCase):
@@ -240,3 +241,28 @@ class IncomeDeleteTests(TestCase):
         self.assertTrue(
             Income.objects.filter(pk=self.income.pk).exists(),
         )
+
+class ExpenseModelTests(TestCase):
+    def test_expense_is_saved_with_owner_and_category(self):
+        user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+
+        expense = Expense.objects.create(
+            owner=user,
+            name="Netflix",
+            category=Expense.Category.SUBSCRIPTIONS,
+            amount=Decimal("50.00"),
+            paid_on=date(2026, 10, 10),
+        )
+
+        saved_expense = Expense.objects.get(pk=expense.pk)
+
+        self.assertEqual(saved_expense.owner, user)
+        self.assertEqual(saved_expense.name, "Netflix")
+        self.assertEqual(
+            saved_expense.category,
+            Expense.Category.SUBSCRIPTIONS,
+        )
+        self.assertEqual(saved_expense.amount, Decimal("50.00"))
+        self.assertEqual(saved_expense.paid_on, date(2026, 10, 10))
