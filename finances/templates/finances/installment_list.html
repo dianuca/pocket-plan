@@ -3,27 +3,24 @@
 {% block title %}Rate | PocketPlan{% endblock %}
 
 {% block content %}
-    <h1>Rate</h1>
+    <div class="page-heading">
+        <div>
+            <h1>Rate</h1>
+            <p>Gestionează ratele și urmărește plățile lunare.</p>
+        </div>
 
-    <form method="get">
-        <label for="month">Luna</label>
-        <input
-            id="month"
-            type="month"
-            name="month"
-            value="{{ selected_month }}"
-            required
-        >
-        <button type="submit">Afișează</button>
-    </form>
+        {% include "includes/month_picker.html" %}
+    </div>
 
-    <h2>Adaugă o rată</h2>
+    <details class="entry-panel" {% if form.errors %}open{% endif %}>
+        <summary> Adaugă o rată</summary>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Salvează rata</button>
-    </form>
+        <form method="post" class="entry-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Salvează rata</button>
+        </form>
+    </details>
 
     <h2>Ratele tale</h2>
 

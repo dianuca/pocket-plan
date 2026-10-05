@@ -1,59 +1,98 @@
 {% extends "base.html" %}
 
 {% block title %}Rezumat lunar | PocketPlan{% endblock %}
-
 {% block content %}
-    <h1>Rezumat lunar</h1>
-        <form method="get">
-        <label for="month">Selectează luna</label>
-        <input
-            id="month"
-            name="month"
-            type="month"
-            value="{{ selected_month }}"
-            required
-        >
-        <button type="submit">Afișează</button>
-    </form>
-    <p>Veniturile, cheltuielile și ratele provin din baza de date.</p>
+    <div class="page-heading">
+        <div>
+            <h1>Rezumat lunar</h1>
+            <p>Bugetul tău, dintr-o privire.</p>
+        </div>
 
-    <dl>
-        <dt>Venituri</dt>
-        <dd>{{ income|floatformat:2 }} lei</dd>
+    {% include "includes/month_picker.html" %}
+    </div>
 
-        <dt>Cheltuieli</dt>
-        <dd>{{ expenses|floatformat:2 }} lei</dd>
+    <section class="summary-cards" aria-label="Totaluri lunare">
+        <article class="summary-card">
+            <p>Venituri</p>
+            <strong class="amount-positive">
+                {{ income|floatformat:2 }} lei
+            </strong>
+            <span>Total încasat în luna selectată</span>
+        </article>
 
-        <dt>Bani rămași</dt>
-        <dd>{{ balance|floatformat:2 }} lei</dd>
-    </dl>
+        <article class="summary-card">
+            <p>Cheltuieli</p>
+            <strong>{{ expenses|floatformat:2 }} lei</strong>
+            <span>Include ratele active</span>
+        </article>
 
-    <h2>Cheltuieli</h2>
-    <ul>
-        {% for item in expense_items %}
-            <li>
-                {{ item.name }}:
-                {{ item.amount|floatformat:2 }} lei
-            </li>
-        {% empty %}
-            <li>Nu există cheltuieli pentru această lună.</li>
-        {% endfor %}
-    </ul>
+        <article class="summary-card balance-card">
+            <p>Bani rămași</p>
+            <strong>{{ balance|floatformat:2 }} lei</strong>
+            <span>
+                {% if balance < 0 %}
+                    Cheltuielile depășesc veniturile
+                {% else %}
+                    Disponibil după cheltuieli
+                {% endif %}
+            </span>
+        </article>
+    </section>
 
-    <h2>Ratele lunii</h2>
-    <ul>
-        {% for item in installment_items %}
-            <li>
-                {{ item.name }}:
-                {{ item.amount|floatformat:2 }} lei —
-                {{ item.remaining }} rate rămase,
-                inclusiv luna selectată
-            </li>
-        {% empty %}
-            <li>Nu există rate active în această lună.</li>
-        {% endfor %}
-    </ul>
+    <div class="dashboard-panels">
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Cheltuieli</h2>
+                <a href="{% url 'expense-list' %}?month={{ selected_month }}">
+                    Vezi toate
+                </a>
+            </div>
 
-    <p>Total rate: {{ installment_total|floatformat:2 }} lei</p>
+            <ul class="financial-list">
+                {% for item in expense_items %}
+                    <li>
+                        <span>{{ item.name }}</span>
+                        <strong>{{ item.amount|floatformat:2 }} lei</strong>
+                    </li>
+                {% empty %}
+                    <li class="empty-state">
+                        Nu există cheltuieli pentru această lună.
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
 
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Ratele lunii</h2>
+                <a href="{% url 'installment-list' %}?month={{ selected_month }}">
+                    Vezi toate
+                </a>
+            </div>
+
+            <ul class="financial-list">
+                {% for item in installment_items %}
+                    <li>
+                        <div>
+                            <span>{{ item.name }}</span>
+                            <small>
+                                {{ item.remaining }} rate rămase,
+                                inclusiv luna selectată
+                            </small>
+                        </div>
+                        <strong>{{ item.amount|floatformat:2 }} lei</strong>
+                    </li>
+                {% empty %}
+                    <li class="empty-state">
+                        Nu există rate active în această lună.
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <p class="panel-total">
+                Total rate:
+                <strong>{{ installment_total|floatformat:2 }} lei</strong>
+            </p>
+        </section>
+    </div>
 {% endblock %}

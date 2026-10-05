@@ -3,27 +3,24 @@
 {% block title %}Venituri | PocketPlan{% endblock %}
 
 {% block content %}
-    <h1>Venituri</h1>
+    <div class="page-heading">
+        <div>
+            <h1>Venituri</h1>
+            <p>Gestionează sursele de venit ale lunii.</p>
+        </div>
 
-    <form method="get">
-        <label for="month">Luna</label>
-        <input
-            id="month"
-            type="month"
-            name="month"
-            value="{{ selected_month }}"
-            required
-        >
-        <button type="submit">Afișează</button>
-    </form>
+        {% include "includes/month_picker.html" %}
+    </div>
 
-    <h2>Adaugă un venit</h2>
+    <details class="entry-panel" {% if form.errors %}open{% endif %}>
+        <summary> Adaugă un venit</summary>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Salvează venitul</button>
-    </form>
+        <form method="post" class="entry-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Salvează</button>
+        </form>
+    </details>
 
     <h2>Veniturile lunii</h2>
 
