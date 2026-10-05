@@ -699,4 +699,68 @@ class InstallmentEditTests(TestCase):
             Decimal("200.00"),
         )
 
-    
+class InstallmentDeleteTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.installment = Installment.objects.create(
+            owner=self.user,
+            name="Laptop",
+            monthly_amount=Decimal("200.00"),
+            first_due_on=date(2026, 10, 15),
+            number_of_installments=3,
+        )
+
+    def test_get_displays_confirmation_without_deleting(self):
+        response = self.client.get(
+            f"/finances/installments/{self.installment.pk}/delete/",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "finances/installment_confirm_delete.html",
+        )
+        self.assertTrue(
+            Installment.objects.filter(
+                pk=self.installment.pk,
+            ).exists(),
+        )
+
+    def test_post_deletes_installment(self):
+        response = self.client.post(
+            f"/finances/installments/{self.installment.pk}/delete/",
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/installments/?month=2026-10",
+        )
+        self.assertFalse(
+            Installment.objects.filter(
+                pk=self.installment.pk,
+            ).exists(),
+        )
+
+    def test_other_user_cannot_access_or_delete_installment(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        url = f"/finances/installments/{self.installment.pk}/delete/"
+
+        for method in ["get", "post"]:
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 404)
+
+        self.assertTrue(
+            Installment.objects.filter(
+                pk=self.installment.pk,
+            ).exists(),
+        )
+
