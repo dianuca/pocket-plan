@@ -4,7 +4,11 @@ import re
 
 from django.http import HttpResponseBadRequest
 from django.shortcuts import render
-from .services import calculate_expenses 
+from .services import (
+    calculate_expenses,
+    installment_amount_for_month,
+    remaining_installments,
+)
 
 
 def monthly_summary(request):
@@ -30,12 +34,29 @@ def monthly_summary(request):
     except ValueError:
         return HttpResponseBadRequest("Luna selectată nu există.")
 
+    installment_total = installment_amount_for_month(
+        monthly_amount=Decimal("200.00"),
+        first_month="2026-10",
+        number_of_installments=3,
+        selected_month=selected_month,
+    )
+
+    installments_remaining = remaining_installments(
+        first_month="2026-10",
+        number_of_installments=3,
+        selected_month=selected_month,
+    )
+
+    expenses = calculate_expenses(expense_items) + installment_total
+
     context = {
         "income": income,
         "expenses": expenses,
         "balance": income - expenses,
         "selected_month": selected_month,
         "expense_items": expense_items,
+        "installment_total": installment_total,
+        "installments_remaining": installments_remaining,
     }
 
     return render(request, "dashboard/summary.html", context)

@@ -59,6 +59,39 @@ class DashboardPageTests(SimpleTestCase):
         self.assertContains(response, "Utilități")
         self.assertContains(response, "Abonamente")
 
+    def test_dashboard_includes_active_installment(self):
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["installment_total"],
+            Decimal("200.00"),
+        )
+        self.assertEqual(
+            response.context["expenses"],
+            Decimal("3400.00"),
+        )
+        self.assertContains(response, "Laptop")
+
+    def test_dashboard_excludes_finished_installment(self):
+        response = self.client.get(
+            "/dashboard/",
+            {"month": "2027-01"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["installment_total"],
+            Decimal("0.00"),
+        )
+        self.assertEqual(
+            response.context["expenses"],
+            Decimal("3200.00"),
+        )
+
 class FinancialCalculationTests(SimpleTestCase):
     def test_calculates_expense_total(self):
         items = [
