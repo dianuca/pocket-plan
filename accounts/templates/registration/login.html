@@ -1,21 +1,19 @@
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <title>Autentificare | PocketPlan</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Autentificare | PocketPlan{% endblock %}
+
+{% block content %}
     <h1>Autentificare PocketPlan</h1>
 
     <form method="post">
         {% csrf_token %}
+
         <label for="username">Utilizator</label>
         <input id="username" name="username" type="text" required>
-        
+
         <label for="password">Parolă</label>
         <input id="password" name="password" type="password" required>
 
         <button type="submit">Intră în cont</button>
     </form>
-</body>
-</html>
+{% endblock %}
