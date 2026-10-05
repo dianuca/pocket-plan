@@ -3,6 +3,7 @@ from decimal import Decimal
 from .services import calculate_expenses 
 from .services import installment_amount_for_month
 from .services import remaining_installments
+from .forms import InstallmentPreviewForm
 
 class DashboardPageTests(SimpleTestCase):
     def test_dashboard_displays_monthly_summary(self):
@@ -168,3 +169,72 @@ class InstallmentCalculationTests(SimpleTestCase):
                 )
 
                 self.assertEqual(remaining, expected)
+
+class InstallmentPreviewPageTests(SimpleTestCase):
+    def test_preview_page_displays_form(self):
+        response = self.client.get("/dashboard/installments/preview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "dashboard/installment_preview.html",
+        )
+        self.assertIsInstance(
+            response.context["form"],
+            InstallmentPreviewForm,
+        )
+
+    def test_valid_submission_calculates_preview(self):
+        response = self.client.post(
+            "/dashboard/installments/preview/",
+            data={
+                "name": "Laptop",
+                "monthly_amount": "200.00",
+                "first_month": "2026-10",
+                "number_of_installments": "3",
+                "selected_month": "2026-11",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["preview"]["amount"],
+            Decimal("200.00"),
+        )
+        self.assertEqual(
+            response.context["preview"]["remaining"],
+            2,
+        )
+        self.assertContains(response, "Laptop")
+
+class InstallmentPreviewFormTests(SimpleTestCase):
+    def test_valid_installment_data_is_accepted(self):
+        form = InstallmentPreviewForm(data={
+            "name": "Laptop",
+            "monthly_amount": "200.00",
+            "first_month": "2026-10",
+            "number_of_installments": "3",
+            "selected_month": "2026-11",
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["monthly_amount"],
+            Decimal("200.00"),
+        )
+        self.assertEqual(
+            form.cleaned_data["number_of_installments"],
+            3,
+        )
+
+    def test_zero_installments_are_rejected(self):
+        form = InstallmentPreviewForm(data={
+            "name": "Laptop",
+            "monthly_amount": "200.00",
+            "first_month": "2026-10",
+            "number_of_installments": "0",
+            "selected_month": "2026-11",
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("number_of_installments", form.errors)
