@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Șterge cheltuiala | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Șterge cheltuiala</h1>
+
+    <p>
+        Sigur vrei să ștergi cheltuiala „{{ expense.name }}”,
+        de {{ expense.amount|floatformat:2 }} lei?
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmă ștergerea</button>
+    </form>
+
+    <a href="{{ cancel_url }}">Anulează</a>
+{% endblock %}
