@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Rate | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Rate</h1>
+
+    <form method="get">
+        <label for="month">Luna</label>
+        <input
+            id="month"
+            type="month"
+            name="month"
+            value="{{ selected_month }}"
+            required
+        >
+        <button type="submit">Afișează</button>
+    </form>
+
+    <h2>Adaugă o rată</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Salvează rata</button>
+    </form>
+
+    <h2>Ratele tale</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nume</th>
+                <th>Sumă lunară</th>
+                <th>Prima scadență</th>
+                <th>Total rate</th>
+                <th>De plată în luna aleasă</th>
+                <th>Rate rămase</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in installment_rows %}
+                <tr>
+                    <td>{{ row.installment.name }}</td>
+                    <td>{{ row.installment.monthly_amount|floatformat:2 }} lei</td>
+                    <td>{{ row.installment.first_due_on|date:"d.m.Y" }}</td>
+                    <td>{{ row.installment.number_of_installments }}</td>
+                    <td>{{ row.amount_due|floatformat:2 }} lei</td>
+                    <td>{{ row.remaining }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">Nu există rate salvate.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Ratele rămase includ plata din luna selectată.</p>
+{% endblock %}
