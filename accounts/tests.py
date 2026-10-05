@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 from accounts.forms import LoginForm
-
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 class LoginPageTests(SimpleTestCase):
     def test_login_page_is_accessible(self):
@@ -51,3 +52,41 @@ class LoginFormTests(SimpleTestCase):
         })
 
         self.assertTrue(form.is_valid())
+
+class LoginAuthenticationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+            password="TestPassword123!",
+        )
+
+    def test_valid_credentials_log_user_in(self):
+        response = self.client.post(
+            "/accounts/login/",
+            data={
+                "username": "testuser",
+                "password": "TestPassword123!",
+            },
+        )
+
+        self.assertRedirects(response, "/dashboard/")
+        self.assertEqual(
+            int(self.client.session["_auth_user_id"]),
+            self.user.pk,
+        )
+
+    def test_wrong_password_does_not_log_user_in(self):
+        response = self.client.post(
+            "/accounts/login/",
+            data={
+                "username": "testuser",
+                "password": "wrong-password",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertContains(
+            response,
+            "Utilizator sau parolă incorectă.",
+        )
