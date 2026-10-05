@@ -46,6 +46,7 @@
                     <td>{{ expense.paid_on|date:"d.m.Y" }}</td>
                     <td>
                         <a href="{% url 'expense-edit' expense.pk %}">Editează</a>
+                        <a href="{% url 'expense-delete' expense.pk %}">Șterge</a>
                     </td>
                 </tr>
             {% empty %}

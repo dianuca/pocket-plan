@@ -425,3 +425,61 @@ class ExpenseEditTests(TestCase):
         self.expense.refresh_from_db()
         self.assertEqual(self.expense.amount, Decimal("50.00"))
 
+class ExpenseDeleteTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.expense = Expense.objects.create(
+            owner=self.user,
+            name="Netflix",
+            category=Expense.Category.SUBSCRIPTIONS,
+            amount=Decimal("50.00"),
+            paid_on=date(2026, 10, 10),
+        )
+
+    def test_get_displays_confirmation_without_deleting(self):
+        response = self.client.get(
+            f"/finances/expenses/{self.expense.pk}/delete/",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "finances/expense_confirm_delete.html",
+        )
+        self.assertTrue(
+            Expense.objects.filter(pk=self.expense.pk).exists(),
+        )
+
+    def test_post_deletes_expense(self):
+        response = self.client.post(
+            f"/finances/expenses/{self.expense.pk}/delete/",
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/expenses/?month=2026-10",
+        )
+        self.assertFalse(
+            Expense.objects.filter(pk=self.expense.pk).exists(),
+        )
+
+    def test_other_user_cannot_access_or_delete_expense(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        url = f"/finances/expenses/{self.expense.pk}/delete/"
+
+        for method in ["get", "post"]:
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 404)
+
+        self.assertTrue(
+            Expense.objects.filter(pk=self.expense.pk).exists(),
+        )

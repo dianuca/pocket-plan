@@ -180,3 +180,27 @@ def expense_edit(request, pk):
         {"form": form, "expense": expense},
     )
 
+@login_required
+def expense_delete(request, pk):
+    expense = get_object_or_404(
+        Expense,
+        pk=pk,
+        owner=request.user,
+    )
+
+    month = expense.paid_on.strftime("%Y-%m")
+    cancel_url = f"{reverse('expense-list')}?month={month}"
+
+    if request.method == "POST":
+        expense.delete()
+        return redirect(cancel_url)
+
+    return render(
+        request,
+        "finances/expense_confirm_delete.html",
+        {
+            "expense": expense,
+            "cancel_url": cancel_url,
+        },
+    )
+
