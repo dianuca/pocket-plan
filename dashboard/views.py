@@ -11,7 +11,7 @@ from .services import (
 )
 from .forms import InstallmentPreviewForm
 from django.db.models import Sum
-from finances.models import Expense, Income 
+from finances.models import Expense, Income, Installment
 
 
 @login_required
@@ -23,23 +23,18 @@ def monthly_summary(request):
 
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}", selected_month):
         return HttpResponseBadRequest("Lună invalidă. Folosește YYYY-MM.")
-
     try:
         date.fromisoformat(f"{selected_month}-01")
     except ValueError:
         return HttpResponseBadRequest("Luna selectată nu există.")
-
     year, month = map(int, selected_month.split("-"))
-
     income = Income.objects.filter(
         owner=request.user,
         received_on__year=year,
         received_on__month=month,
     ).aggregate(total=Sum("amount"))["total"]
-
     if income is None:
         income = Decimal("0.00")
-
     expense_items = list(
         Expense.objects.filter(
             owner=request.user,
@@ -49,19 +44,38 @@ def monthly_summary(request):
         .order_by("-paid_on", "-pk")
         .values("name", "amount")
     )
+    installment_items = []
+    installment_total = Decimal("0.00")
 
-    installment_total = installment_amount_for_month(
-        monthly_amount=Decimal("200.00"),
-        first_month="2026-10",
-        number_of_installments=3,
-        selected_month=selected_month,
-    )
+    installments = Installment.objects.filter(
+        owner=request.user,
+    ).order_by("name", "pk")
 
-    installments_remaining = remaining_installments(
-        first_month="2026-10",
-        number_of_installments=3,
-        selected_month=selected_month,
-    )
+    for installment in installments:
+        first_month = installment.first_due_on.strftime("%Y-%m")
+
+        amount = installment_amount_for_month(
+            monthly_amount=installment.monthly_amount,
+            first_month=first_month,
+            number_of_installments=installment.number_of_installments,
+            selected_month=selected_month,
+        )
+
+        if amount == Decimal("0.00"):
+            continue
+
+        remaining = remaining_installments(
+            first_month=first_month,
+            number_of_installments=installment.number_of_installments,
+            selected_month=selected_month,
+        )
+
+        installment_items.append({
+            "name": installment.name,
+            "amount": amount,
+            "remaining": remaining,
+        })
+        installment_total += amount
 
     expenses = calculate_expenses(expense_items) + installment_total
 
@@ -71,10 +85,9 @@ def monthly_summary(request):
         "balance": income - expenses,
         "selected_month": selected_month,
         "expense_items": expense_items,
+        "installment_items": installment_items,
         "installment_total": installment_total,
-        "installments_remaining": installments_remaining,
     }
-
     return render(request, "dashboard/summary.html", context)
 
 @login_required
@@ -110,3 +123,5 @@ def installment_preview(request):
         "dashboard/installment_preview.html",
         {"form": form, "preview": preview},
     )
+
+

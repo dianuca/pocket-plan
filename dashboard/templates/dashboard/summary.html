@@ -15,10 +15,7 @@
         >
         <button type="submit">Afișează</button>
     </form>
-    <p>
-        Veniturile sunt salvate în baza de date.
-        Cheltuielile și ratele sunt încă demonstrative.
-    </p>
+    <p>Veniturile, cheltuielile și ratele provin din baza de date.</p>
 
     <dl>
         <dt>Venituri</dt>
@@ -42,16 +39,21 @@
             <li>Nu există cheltuieli pentru această lună.</li>
         {% endfor %}
     </ul>
-    
-    <h2>Rate — date demonstrative</h2>
 
-    <p>Laptop</p>
-    <p>
-        De plată în luna selectată:
-        {{ installment_total|floatformat:2 }} lei
-    </p>
-    <p>
-        Rate rămase, inclusiv luna selectată:
-        {{ installments_remaining }}
-    </p>
+    <h2>Ratele lunii</h2>
+    <ul>
+        {% for item in installment_items %}
+            <li>
+                {{ item.name }}:
+                {{ item.amount|floatformat:2 }} lei —
+                {{ item.remaining }} rate rămase,
+                inclusiv luna selectată
+            </li>
+        {% empty %}
+            <li>Nu există rate active în această lună.</li>
+        {% endfor %}
+    </ul>
+
+    <p>Total rate: {{ installment_total|floatformat:2 }} lei</p>
+
 {% endblock %}
