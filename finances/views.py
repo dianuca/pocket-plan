@@ -9,7 +9,7 @@ from dashboard.forms import MonthField
 
 from .forms import IncomeForm
 from .models import Income
-
+from django.shortcuts import get_object_or_404, redirect, render
 from django.core.exceptions import ValidationError
 
 @login_required
@@ -57,3 +57,30 @@ def income_list(request):
             "selected_month": selected_month,
         },
     )
+
+@login_required
+def income_edit(request, pk):
+    income = get_object_or_404(
+        Income,
+        pk=pk,
+        owner=request.user,
+    )
+
+    if request.method == "POST":
+        form = IncomeForm(data=request.POST, instance=income)
+
+        if form.is_valid():
+            income = form.save()
+
+            month = income.received_on.strftime("%Y-%m")
+            url = reverse("income-list")
+            return redirect(f"{url}?month={month}")
+    else:
+        form = IncomeForm(instance=income)
+
+    return render(
+        request,
+        "finances/income_edit.html",
+        {"form": form, "income": income},
+    )
+

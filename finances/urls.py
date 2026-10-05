@@ -4,4 +4,9 @@ from . import views
 
 urlpatterns = [
     path("incomes/", views.income_list, name="income-list"),
+    path(
+        "incomes/<int:pk>/edit/",
+        views.income_edit,
+        name="income-edit",
+    ),
 ]

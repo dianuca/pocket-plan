@@ -33,6 +33,7 @@
                 <th>Sursă</th>
                 <th>Sumă</th>
                 <th>Data încasării</th>
+                <th>Acțiuni</th>
             </tr>
         </thead>
         <tbody>
@@ -41,10 +42,13 @@
                     <td>{{ income.source }}</td>
                     <td>{{ income.amount|floatformat:2 }} lei</td>
                     <td>{{ income.received_on|date:"d.m.Y" }}</td>
+                    <td>
+                        <a href="{% url 'income-edit' income.pk %}">Editează</a>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="3">Nu există venituri în această lună.</td>
+                    <td colspan="4">Nu există venituri în această lună.</td>
                 </tr>
             {% endfor %}
         </tbody>
