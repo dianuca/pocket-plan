@@ -131,3 +131,56 @@ class IncomePageTests(TestCase):
         self.assertContains(response, "Salariu octombrie")
         self.assertNotContains(response, "Venit septembrie")
         self.assertNotContains(response, "Venit alt utilizator")
+
+class IncomeEditTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.income = Income.objects.create(
+            owner=self.user,
+            source="Salariu",
+            amount=Decimal("5000.00"),
+            received_on=date(2026, 10, 5),
+        )
+
+    def test_owner_can_edit_income(self):
+        response = self.client.post(
+            f"/finances/incomes/{self.income.pk}/edit/",
+            data={
+                "source": "Salariu corectat",
+                "amount": "5200.00",
+                "received_on": "2026-10-06",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/incomes/?month=2026-10",
+        )
+
+        self.income.refresh_from_db()
+
+        self.assertEqual(self.income.source, "Salariu corectat")
+        self.assertEqual(self.income.amount, Decimal("5200.00"))
+        self.assertEqual(self.income.received_on, date(2026, 10, 6))
+        self.assertEqual(self.income.owner, self.user)
+
+    def test_other_user_cannot_edit_income(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        url = f"/finances/incomes/{self.income.pk}/edit/"
+
+        for method in ["get", "post"]:
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url)
+
+                self.assertEqual(response.status_code, 404)
+
+        self.income.refresh_from_db()
+        self.assertEqual(self.income.amount, Decimal("5000.00"))
