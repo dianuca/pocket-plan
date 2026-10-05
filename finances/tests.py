@@ -4,9 +4,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from .models import Income
 from .forms import IncomeForm
-from .models import Expense, Income
+from .models import Expense, Income, Installment
 from .forms import ExpenseForm, IncomeForm
-
 
 class IncomeModelTests(TestCase):
     def test_income_is_saved_with_its_owner(self):
@@ -483,3 +482,26 @@ class ExpenseDeleteTests(TestCase):
         self.assertTrue(
             Expense.objects.filter(pk=self.expense.pk).exists(),
         )
+
+class InstallmentModelTests(TestCase):
+    def test_installment_is_saved_with_owner_and_schedule(self):
+        user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+
+        installment = Installment.objects.create(
+            owner=user,
+            name="Laptop",
+            monthly_amount=Decimal("200.00"),
+            first_due_on=date(2026, 10, 15),
+            number_of_installments=3,
+        )
+
+        saved = Installment.objects.get(pk=installment.pk)
+
+        self.assertEqual(saved.owner, user)
+        self.assertEqual(saved.name, "Laptop")
+        self.assertEqual(saved.monthly_amount, Decimal("200.00"))
+        self.assertEqual(saved.first_due_on, date(2026, 10, 15))
+        self.assertEqual(saved.number_of_installments, 3)
+

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
-
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 class Income(models.Model):
     owner = models.ForeignKey(
@@ -45,3 +46,24 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.amount}"
+
+class Installment(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="installments",
+    )
+    name = models.CharField(max_length=100)
+    monthly_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    first_due_on = models.DateField()
+    number_of_installments = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+    )
+
+    def __str__(self):
+        return f"{self.name}: {self.monthly_amount} lei/lună"
+
