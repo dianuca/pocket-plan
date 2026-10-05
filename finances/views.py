@@ -4,12 +4,14 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from dashboard.forms import MonthField
-from .forms import IncomeForm
-from .models import Income
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.exceptions import ValidationError
-from .forms import ExpenseForm, IncomeForm
-from .models import Expense, Income
+from .forms import ExpenseForm, IncomeForm, InstallmentForm
+from .models import Expense, Income, Installment
+from dashboard.services import (
+    installment_amount_for_month,
+    remaining_installments,
+) 
 
 
 @login_required
@@ -201,6 +203,68 @@ def expense_delete(request, pk):
         {
             "expense": expense,
             "cancel_url": cancel_url,
+        },
+    )
+
+@login_required
+def installment_list(request):
+    selected_month = request.GET.get(
+        "month",
+        date.today().strftime("%Y-%m"),
+    )
+
+    try:
+        selected_month = MonthField().clean(selected_month)
+    except ValidationError:
+        return HttpResponseBadRequest("Lună invalidă.")
+
+    if request.method == "POST":
+        form = InstallmentForm(data=request.POST)
+
+        if form.is_valid():
+            installment = form.save(commit=False)
+            installment.owner = request.user
+            installment.save()
+
+            month = installment.first_due_on.strftime("%Y-%m")
+            url = reverse("installment-list")
+            return redirect(f"{url}?month={month}")
+    else:
+        form = InstallmentForm(initial={
+            "first_due_on": date.fromisoformat(f"{selected_month}-01"),
+        })
+
+    installments = Installment.objects.filter(
+        owner=request.user,
+    ).order_by("name", "pk")
+
+    installment_rows = []
+
+    for installment in installments:
+        first_month = installment.first_due_on.strftime("%Y-%m")
+
+        installment_rows.append({
+            "installment": installment,
+            "amount_due": installment_amount_for_month(
+                monthly_amount=installment.monthly_amount,
+                first_month=first_month,
+                number_of_installments=installment.number_of_installments,
+                selected_month=selected_month,
+            ),
+            "remaining": remaining_installments(
+                first_month=first_month,
+                number_of_installments=installment.number_of_installments,
+                selected_month=selected_month,
+            ),
+        })
+
+    return render(
+        request,
+        "finances/installment_list.html",
+        {
+            "form": form,
+            "installment_rows": installment_rows,
+            "selected_month": selected_month,
         },
     )
 

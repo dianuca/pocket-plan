@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django import forms
 from .models import Income
-from .models import Expense, Income
+from .models import Expense, Income, Installment
 
 
 class IncomeForm(forms.ModelForm):
@@ -56,3 +56,27 @@ class ExpenseForm(forms.ModelForm):
             )
 
         return amount
+
+class InstallmentForm(forms.ModelForm):
+    class Meta:
+        model = Installment
+        fields = [
+            "name",
+            "monthly_amount",
+            "first_due_on",
+            "number_of_installments",
+        ]
+
+        labels = {
+            "name": "Numele ratei",
+            "monthly_amount": "Suma lunară",
+            "first_due_on": "Prima scadență",
+            "number_of_installments": "Numărul total de rate",
+        }
+
+        widgets = {
+            "first_due_on": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
+        }

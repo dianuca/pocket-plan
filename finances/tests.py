@@ -5,7 +5,7 @@ from django.test import TestCase
 from .models import Income
 from .forms import IncomeForm
 from .models import Expense, Income, Installment
-from .forms import ExpenseForm, IncomeForm
+from .forms import ExpenseForm, IncomeForm, InstallmentForm
 
 class IncomeModelTests(TestCase):
     def test_income_is_saved_with_its_owner(self):
@@ -505,3 +505,134 @@ class InstallmentModelTests(TestCase):
         self.assertEqual(saved.first_due_on, date(2026, 10, 15))
         self.assertEqual(saved.number_of_installments, 3)
 
+class InstallmentFormTests(TestCase):
+    def test_valid_installment_is_accepted(self):
+        form = InstallmentForm(data={
+            "name": "Laptop",
+            "monthly_amount": "200.00",
+            "first_due_on": "2026-10-15",
+            "number_of_installments": "3",
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["monthly_amount"],
+            Decimal("200.00"),
+        )
+        self.assertEqual(
+            form.cleaned_data["first_due_on"],
+            date(2026, 10, 15),
+        )
+        self.assertEqual(
+            form.cleaned_data["number_of_installments"],
+            3,
+        )
+
+    def test_invalid_amount_and_installment_count_are_rejected(self):
+        for amount, count in [
+            ("0.00", "3"),
+            ("-200.00", "3"),
+            ("200.00", "0"),
+            ("200.00", "-1"),
+        ]:
+            with self.subTest(amount=amount, count=count):
+                form = InstallmentForm(data={
+                    "name": "Laptop",
+                    "monthly_amount": amount,
+                    "first_due_on": "2026-10-15",
+                    "number_of_installments": count,
+                })
+
+                self.assertFalse(form.is_valid())
+                field = (
+                    "monthly_amount"
+                    if Decimal(amount) <= 0
+                    else "number_of_installments"
+                )
+                self.assertIn(field, form.errors)
+
+    def test_owner_is_not_editable(self):
+        self.assertNotIn("owner", InstallmentForm().fields)
+
+class InstallmentPageTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+    def test_submission_saves_installment_for_logged_in_user(self):
+        response = self.client.post(
+            "/finances/installments/",
+            data={
+                "name": "Laptop",
+                "monthly_amount": "200.00",
+                "first_due_on": "2026-10-15",
+                "number_of_installments": "3",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/installments/?month=2026-10",
+        )
+
+        installment = Installment.objects.get()
+
+        self.assertEqual(installment.owner, self.user)
+        self.assertEqual(installment.name, "Laptop")
+        self.assertEqual(
+            installment.monthly_amount,
+            Decimal("200.00"),
+        )
+        self.assertEqual(
+            installment.first_due_on,
+            date(2026, 10, 15),
+        )
+        self.assertEqual(installment.number_of_installments, 3)
+
+    def test_anonymous_user_is_redirected_to_login(self):
+        self.client.logout()
+
+        response = self.client.get("/finances/installments/")
+
+        self.assertRedirects(
+            response,
+            "/accounts/login/?next=/finances/installments/",
+        )
+    def test_list_shows_only_own_installments_with_monthly_values(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+
+        Installment.objects.create(
+            owner=self.user,
+            name="Laptop personal",
+            monthly_amount=Decimal("200.00"),
+            first_due_on=date(2026, 10, 15),
+            number_of_installments=3,
+        )
+        Installment.objects.create(
+            owner=other_user,
+            name="Telefon alt utilizator",
+            monthly_amount=Decimal("100.00"),
+            first_due_on=date(2026, 10, 10),
+            number_of_installments=3,
+        )
+
+        response = self.client.get(
+            "/finances/installments/",
+            {"month": "2026-11"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Laptop personal")
+        self.assertNotContains(response, "Telefon alt utilizator")
+
+        rows = response.context["installment_rows"]
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["amount_due"], Decimal("200.00"))
+        self.assertEqual(rows[0]["remaining"], 2)
+
+        
