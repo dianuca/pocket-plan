@@ -10,23 +10,16 @@ from .services import (
     remaining_installments,
 )
 from .forms import InstallmentPreviewForm
+from django.db.models import Sum
+from finances.models import Income
 
 @login_required
 def monthly_summary(request):
-    income = Decimal("5000.00")
-    expense_items = [
-        {"name": "Chirie", "amount": Decimal("2500.00")},
-        {"name": "Utilități", "amount": Decimal("500.00")},
-        {"name": "Abonamente", "amount": Decimal("200.00")},
-    ]
-
-    expenses = calculate_expenses(expense_items)
-    
     selected_month = request.GET.get(
         "month",
         date.today().strftime("%Y-%m"),
     )
-    
+
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}", selected_month):
         return HttpResponseBadRequest("Lună invalidă. Folosește YYYY-MM.")
 
@@ -34,6 +27,23 @@ def monthly_summary(request):
         date.fromisoformat(f"{selected_month}-01")
     except ValueError:
         return HttpResponseBadRequest("Luna selectată nu există.")
+
+    year, month = map(int, selected_month.split("-"))
+
+    income = Income.objects.filter(
+        owner=request.user,
+        received_on__year=year,
+        received_on__month=month,
+    ).aggregate(total=Sum("amount"))["total"]
+
+    if income is None:
+        income = Decimal("0.00")
+
+    expense_items = [
+        {"name": "Chirie", "amount": Decimal("2500.00")},
+        {"name": "Utilități", "amount": Decimal("500.00")},
+        {"name": "Abonamente", "amount": Decimal("200.00")},
+    ]
 
     installment_total = installment_amount_for_month(
         monthly_amount=Decimal("200.00"),
