@@ -4,8 +4,10 @@ from .services import calculate_expenses
 from .services import installment_amount_for_month
 from .services import remaining_installments
 from .forms import InstallmentPreviewForm
+from django.test import TestCase
+from django.contrib.auth import get_user_model
 
-class DashboardPageTests(SimpleTestCase):
+class DashboardPageTests(TestCase):
     def test_dashboard_displays_monthly_summary(self):
         response = self.client.get("/dashboard/")
 
@@ -93,6 +95,13 @@ class DashboardPageTests(SimpleTestCase):
             Decimal("3200.00"),
         )
 
+    def setUp(self):
+        user = get_user_model().objects.create_user(
+            username="testuser",
+            password="TestPassword123!",
+        )
+        self.client.force_login(user)
+
 class FinancialCalculationTests(SimpleTestCase):
     def test_calculates_expense_total(self):
         items = [
@@ -170,7 +179,7 @@ class InstallmentCalculationTests(SimpleTestCase):
 
                 self.assertEqual(remaining, expected)
 
-class InstallmentPreviewPageTests(SimpleTestCase):
+class InstallmentPreviewPageTests(TestCase):
     def test_preview_page_displays_form(self):
         response = self.client.get("/dashboard/installments/preview/")
 
@@ -206,6 +215,29 @@ class InstallmentPreviewPageTests(SimpleTestCase):
             2,
         )
         self.assertContains(response, "Laptop")
+
+    def setUp(self):
+        user = get_user_model().objects.create_user(
+            username="testuser",
+            password="TestPassword123!",
+        )
+        self.client.force_login(user)
+
+class ProtectedPageTests(TestCase):
+    def test_anonymous_user_is_redirected_to_login(self):
+        pages = [
+            "/dashboard/",
+            "/dashboard/installments/preview/",
+        ]
+
+        for page in pages:
+            with self.subTest(page=page):
+                response = self.client.get(page)
+
+                self.assertRedirects(
+                    response,
+                    f"/accounts/login/?next={page}",
+                )
 
 class InstallmentPreviewFormTests(SimpleTestCase):
     def test_valid_installment_data_is_accepted(self):

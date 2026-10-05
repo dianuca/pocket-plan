@@ -1,7 +1,7 @@
 from decimal import Decimal
 from datetime import date
 import re
-
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.shortcuts import render
 from .services import (
@@ -11,6 +11,7 @@ from .services import (
 )
 from .forms import InstallmentPreviewForm
 
+@login_required
 def monthly_summary(request):
     income = Decimal("5000.00")
     expense_items = [
@@ -61,6 +62,7 @@ def monthly_summary(request):
 
     return render(request, "dashboard/summary.html", context)
 
+@login_required
 def installment_preview(request):
     preview = None
 
