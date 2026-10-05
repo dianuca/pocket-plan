@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Previzualizare rată | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Previzualizare rată</h1>
+    <p>Datele introduse nu sunt salvate.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Calculează</button>
+    </form>
+
+    {% if preview %}
+        <h2>{{ preview.name }}</h2>
+        <p>Luna: {{ preview.selected_month }}</p>
+        <p>De plată: {{ preview.amount|floatformat:2 }} lei</p>
+        <p>Rate rămase: {{ preview.remaining }}</p>
+    {% endif %}
+{% endblock %}

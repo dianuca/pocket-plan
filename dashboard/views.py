@@ -9,7 +9,7 @@ from .services import (
     installment_amount_for_month,
     remaining_installments,
 )
-
+from .forms import InstallmentPreviewForm
 
 def monthly_summary(request):
     income = Decimal("5000.00")
@@ -60,3 +60,36 @@ def monthly_summary(request):
     }
 
     return render(request, "dashboard/summary.html", context)
+
+def installment_preview(request):
+    preview = None
+
+    if request.method == "POST":
+        form = InstallmentPreviewForm(data=request.POST)
+
+        if form.is_valid():
+            data = form.cleaned_data
+
+            preview = {
+                "name": data["name"],
+                "selected_month": data["selected_month"],
+                "amount": installment_amount_for_month(
+                    monthly_amount=data["monthly_amount"],
+                    first_month=data["first_month"],
+                    number_of_installments=data["number_of_installments"],
+                    selected_month=data["selected_month"],
+                ),
+                "remaining": remaining_installments(
+                    first_month=data["first_month"],
+                    number_of_installments=data["number_of_installments"],
+                    selected_month=data["selected_month"],
+                ),
+            }
+    else:
+        form = InstallmentPreviewForm()
+
+    return render(
+        request,
+        "dashboard/installment_preview.html",
+        {"form": form, "preview": preview},
+    )
