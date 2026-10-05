@@ -90,3 +90,23 @@ class LoginAuthenticationTests(TestCase):
             response,
             "Utilizator sau parolă incorectă.",
         )
+
+class LogoutTests(TestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_user(
+            username="testuser",
+            password="TestPassword123!",
+        )
+        self.client.force_login(user)
+
+    def test_post_logs_user_out(self):
+        response = self.client.post("/accounts/logout/")
+
+        self.assertRedirects(response, "/accounts/login/")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_get_does_not_log_user_out(self):
+        response = self.client.get("/accounts/logout/")
+
+        self.assertEqual(response.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
