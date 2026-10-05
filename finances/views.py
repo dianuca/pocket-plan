@@ -268,3 +268,32 @@ def installment_list(request):
         },
     )
 
+@login_required
+def installment_edit(request, pk):
+    installment = get_object_or_404(
+        Installment,
+        pk=pk,
+        owner=request.user,
+    )
+
+    if request.method == "POST":
+        form = InstallmentForm(
+            data=request.POST,
+            instance=installment,
+        )
+
+        if form.is_valid():
+            installment = form.save()
+
+            month = installment.first_due_on.strftime("%Y-%m")
+            url = reverse("installment-list")
+            return redirect(f"{url}?month={month}")
+    else:
+        form = InstallmentForm(instance=installment)
+
+    return render(
+        request,
+        "finances/installment_edit.html",
+        {"form": form, "installment": installment},
+    )
+

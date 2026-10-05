@@ -36,6 +36,7 @@
                 <th>Total rate</th>
                 <th>De plată în luna aleasă</th>
                 <th>Rate rămase</th>
+                <th>Acțiuni</th>
             </tr>
         </thead>
         <tbody>
@@ -47,10 +48,15 @@
                     <td>{{ row.installment.number_of_installments }}</td>
                     <td>{{ row.amount_due|floatformat:2 }} lei</td>
                     <td>{{ row.remaining }}</td>
+                    <td>
+                        <a href="{% url 'installment-edit' row.installment.pk %}">
+                            Editează
+                        </a>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6">Nu există rate salvate.</td>
+                    <td colspan="7">Nu există rate salvate.</td>
                 </tr>
             {% endfor %}
         </tbody>

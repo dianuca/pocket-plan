@@ -635,4 +635,68 @@ class InstallmentPageTests(TestCase):
         self.assertEqual(rows[0]["amount_due"], Decimal("200.00"))
         self.assertEqual(rows[0]["remaining"], 2)
 
-        
+class InstallmentEditTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.installment = Installment.objects.create(
+            owner=self.user,
+            name="Laptop",
+            monthly_amount=Decimal("200.00"),
+            first_due_on=date(2026, 10, 15),
+            number_of_installments=3,
+        )
+
+    def test_owner_can_edit_installment(self):
+        response = self.client.post(
+            f"/finances/installments/{self.installment.pk}/edit/",
+            data={
+                "name": "Laptop corectat",
+                "monthly_amount": "250.00",
+                "first_due_on": "2026-11-15",
+                "number_of_installments": "4",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/installments/?month=2026-11",
+        )
+
+        self.installment.refresh_from_db()
+
+        self.assertEqual(self.installment.name, "Laptop corectat")
+        self.assertEqual(
+            self.installment.monthly_amount,
+            Decimal("250.00"),
+        )
+        self.assertEqual(
+            self.installment.first_due_on,
+            date(2026, 11, 15),
+        )
+        self.assertEqual(self.installment.number_of_installments, 4)
+        self.assertEqual(self.installment.owner, self.user)
+
+    def test_other_user_cannot_edit_installment(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        url = f"/finances/installments/{self.installment.pk}/edit/"
+
+        for method in ["get", "post"]:
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 404)
+
+        self.installment.refresh_from_db()
+        self.assertEqual(
+            self.installment.monthly_amount,
+            Decimal("200.00"),
+        )
+
+    
