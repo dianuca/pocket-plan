@@ -1,4 +1,5 @@
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.http import require_POST
 from django.shortcuts import redirect, render
 
 from .forms import LoginForm
@@ -31,3 +32,8 @@ def login_page(request):
         "registration/login.html",
         {"form": form},
     )
+
+@require_POST
+def logout_page(request):
+    logout(request)
+    return redirect("login")
