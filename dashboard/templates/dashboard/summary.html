@@ -4,6 +4,17 @@
 
 {% block content %}
     <h1>Rezumat lunar</h1>
+        <form method="get">
+        <label for="month">Selectează luna</label>
+        <input
+            id="month"
+            name="month"
+            type="month"
+            value="{{ selected_month }}"
+            required
+        >
+        <button type="submit">Afișează</button>
+    </form>
     <p>Date demonstrative</p>
 
     <dl>
