@@ -5,6 +5,7 @@ from django.test import TestCase
 from .models import Income
 from .forms import IncomeForm
 from .models import Expense, Income
+from .forms import ExpenseForm, IncomeForm
 
 
 class IncomeModelTests(TestCase):
@@ -266,3 +267,106 @@ class ExpenseModelTests(TestCase):
         )
         self.assertEqual(saved_expense.amount, Decimal("50.00"))
         self.assertEqual(saved_expense.paid_on, date(2026, 10, 10))
+
+class ExpenseFormTests(TestCase):
+    def test_valid_expense_is_accepted(self):
+        form = ExpenseForm(data={
+            "name": "Netflix",
+            "category": Expense.Category.SUBSCRIPTIONS,
+            "amount": "50.00",
+            "paid_on": "2026-10-10",
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["amount"],
+            Decimal("50.00"),
+        )
+
+    def test_zero_and_negative_amounts_are_rejected(self):
+        for amount in ["0.00", "-50.00"]:
+            with self.subTest(amount=amount):
+                form = ExpenseForm(data={
+                    "name": "Netflix",
+                    "category": Expense.Category.SUBSCRIPTIONS,
+                    "amount": amount,
+                    "paid_on": "2026-10-10",
+                })
+
+                self.assertFalse(form.is_valid())
+                self.assertIn("amount", form.errors)
+
+    def test_owner_is_not_editable(self):
+        self.assertNotIn("owner", ExpenseForm().fields)
+
+class ExpensePageTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+    def test_submission_saves_expense_for_logged_in_user(self):
+        response = self.client.post(
+            "/finances/expenses/",
+            data={
+                "name": "Netflix",
+                "category": Expense.Category.SUBSCRIPTIONS,
+                "amount": "50.00",
+                "paid_on": "2026-10-10",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/expenses/?month=2026-10",
+        )
+
+        expense = Expense.objects.get()
+
+        self.assertEqual(expense.owner, self.user)
+        self.assertEqual(expense.name, "Netflix")
+        self.assertEqual(expense.amount, Decimal("50.00"))
+        self.assertEqual(
+            expense.category,
+            Expense.Category.SUBSCRIPTIONS,
+        )
+        self.assertEqual(expense.paid_on, date(2026, 10, 10))
+
+    def test_list_shows_only_current_user_and_selected_month(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+
+        for owner, name, paid_on in [
+            (self.user, "Netflix octombrie", date(2026, 10, 10)),
+            (self.user, "Netflix septembrie", date(2026, 9, 10)),
+            (other_user, "Cheltuială alt utilizator", date(2026, 10, 10)),
+        ]:
+            Expense.objects.create(
+                owner=owner,
+                name=name,
+                category=Expense.Category.SUBSCRIPTIONS,
+                amount=Decimal("50.00"),
+                paid_on=paid_on,
+            )
+
+        response = self.client.get(
+            "/finances/expenses/",
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Netflix octombrie")
+        self.assertNotContains(response, "Netflix septembrie")
+        self.assertNotContains(response, "Cheltuială alt utilizator")
+
+    def test_anonymous_user_is_redirected_to_login(self):
+        self.client.logout()
+
+        response = self.client.get("/finances/expenses/")
+
+        self.assertRedirects(
+            response,
+            "/accounts/login/?next=/finances/expenses/",
+        )
