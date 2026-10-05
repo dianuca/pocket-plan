@@ -528,6 +528,71 @@ td a {
     align-self: flex-start;
 }
 
+.edit-modal {
+    width: min(520px, calc(100% - 32px));
+    max-height: 85vh;
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 24px 80px #151b2e33;
+    overflow-y: auto;
+}
+
+.edit-modal::backdrop {
+    background: transparent;
+}
+
+body:has(.edit-modal[open]) .app-content::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 0 240px;
+    z-index: 100;
+    background: #151b2e35;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.edit-modal h2 {
+    margin: 0 0 24px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    border-radius: 12px;
+}
+
+.modal-actions button[data-close-modal] {
+    background: var(--background);
+    color: var(--text);
+}
+
+.danger-button {
+    background: #c53550;
+}
+
+.danger-button:hover {
+    background: #a92b43;
+}
+
+@media (max-width: 800px) {
+    body:has(.edit-modal[open]) .app-content::before {
+        inset: 0;
+    }
+
+    .edit-modal {
+        padding: 24px;
+    }
+}
+
 @media (max-width: 1000px) {
     .dashboard-panels,
     .summary-cards {

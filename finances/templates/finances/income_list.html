@@ -40,8 +40,10 @@
                     <td>{{ income.amount|floatformat:2 }} lei</td>
                     <td>{{ income.received_on|date:"d.m.Y" }}</td>
                     <td>
-                        <a href="{% url 'income-edit' income.pk %}">Editează</a>
-                        <a href="{% url 'income-delete' income.pk %}">Șterge</a>
+                        <a href="{% url 'income-edit' income.pk %}" class="edit-modal-link">
+                            Editează
+                        </a>
+                        <a href="{% url 'income-delete' income.pk %}" class="delete-modal-link">Șterge</a>
                     </td>
                 </tr>
             {% empty %}
@@ -51,4 +53,89 @@
             {% endfor %}
         </tbody>
     </table>
+    <dialog id="edit-modal" class="edit-modal" aria-labelledby="edit-modal-title" >
+        <div id="edit-modal-content"></div>
+    </dialog>
+    <dialog
+        id="delete-modal"
+        class="edit-modal"
+        aria-labelledby="delete-modal-title"
+    >
+        <div id="delete-modal-content"></div>
+    </dialog>
+<script>
+    const editModal = document.getElementById("edit-modal");
+    const modalContent = document.getElementById("edit-modal-content");
+
+    document.querySelectorAll(".edit-modal-link").forEach(link => {
+        link.addEventListener("click", async event => {
+            event.preventDefault();
+
+            try {
+                const response = await fetch(link.href, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Formularul nu a putut fi încărcat.");
+                }
+
+                modalContent.innerHTML = await response.text();
+                editModal.showModal();
+            } catch (error) {
+                window.location.href = link.href;
+            }
+        });
+    });
+
+    modalContent.addEventListener("click", event => {
+        if (event.target.closest("[data-close-modal]")) {
+            editModal.close();
+        }
+    });
+    const deleteModal = document.getElementById("delete-modal");
+const deleteContent = document.getElementById("delete-modal-content");
+
+document.querySelectorAll(".delete-modal-link").forEach(link => {
+    link.addEventListener("click", async event => {
+        event.preventDefault();
+
+        try {
+            const response = await fetch(link.href, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Confirmarea nu a putut fi încărcată.");
+            }
+
+            deleteContent.innerHTML = await response.text();
+            deleteModal.showModal();
+        } catch (error) {
+            window.location.href = link.href;
+        }
+    });
+});
+
+deleteContent.addEventListener("click", event => {
+    if (event.target.closest("[data-close-modal]")) {
+        deleteModal.close();
+    }
+});
+</script>
+
 {% endblock %}

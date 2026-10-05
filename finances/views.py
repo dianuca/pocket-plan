@@ -80,9 +80,14 @@ def income_edit(request, pk):
     else:
         form = IncomeForm(instance=income)
 
+        template = "finances/income_edit.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/income_edit_form.html"
+
     return render(
         request,
-        "finances/income_edit.html",
+        template,
         {"form": form, "income": income},
     )
 
@@ -101,14 +106,20 @@ def income_delete(request, pk):
         income.delete()
         return redirect(cancel_url)
 
+    template = "finances/income_confirm_delete.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/income_delete_form.html"
+
     return render(
         request,
-        "finances/income_confirm_delete.html",
+        template,
         {
             "income": income,
             "cancel_url": cancel_url,
         },
     )
+
 
 @login_required
 def expense_list(request):
