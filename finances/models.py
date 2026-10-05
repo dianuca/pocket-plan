@@ -17,3 +17,31 @@ class Income(models.Model):
 
     def __str__(self):
         return f"{self.source}: {self.amount}"
+
+class Expense(models.Model):
+    class Category(models.TextChoices):
+        RENT = "rent", "Chirie"
+        UTILITIES = "utilities", "Utilități"
+        SUBSCRIPTIONS = "subscriptions", "Abonamente"
+        FOOD = "food", "Alimentație"
+        TRANSPORT = "transport", "Transport"
+        OTHER = "other", "Altele"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="expenses",
+    )
+    name = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+    paid_on = models.DateField()
+
+    def __str__(self):
+        return f"{self.name}: {self.amount}"
