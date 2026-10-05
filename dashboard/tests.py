@@ -1,5 +1,6 @@
 from django.test import SimpleTestCase
 from decimal import Decimal
+from .services import calculate_expenses 
 
 
 class DashboardPageTests(SimpleTestCase):
@@ -56,3 +57,20 @@ class DashboardPageTests(SimpleTestCase):
         self.assertContains(response, "Chirie")
         self.assertContains(response, "Utilități")
         self.assertContains(response, "Abonamente")
+
+class FinancialCalculationTests(SimpleTestCase):
+    def test_calculates_expense_total(self):
+        items = [
+            {"name": "Chirie", "amount": Decimal("2500.00")},
+            {"name": "Utilități", "amount": Decimal("500.50")},
+        ]
+
+        total = calculate_expenses(items)
+
+        self.assertEqual(total, Decimal("3000.50"))
+
+    def test_empty_expenses_return_decimal_zero(self):
+        total = calculate_expenses([])
+
+        self.assertEqual(total, Decimal("0.00"))
+        self.assertIsInstance(total, Decimal)
