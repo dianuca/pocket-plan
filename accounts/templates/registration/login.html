@@ -8,11 +8,7 @@
     <form method="post">
         {% csrf_token %}
 
-        <label for="username">Utilizator</label>
-        <input id="username" name="username" type="text" required>
-
-        <label for="password">Parolă</label>
-        <input id="password" name="password" type="password" required>
+        {{ form.as_p }}
 
         <button type="submit">Intră în cont</button>
     </form>
