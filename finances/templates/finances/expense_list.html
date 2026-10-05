@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Cheltuieli | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Cheltuieli</h1>
+
+    <form method="get">
+        <label for="month">Luna</label>
+        <input
+            id="month"
+            type="month"
+            name="month"
+            value="{{ selected_month }}"
+            required
+        >
+        <button type="submit">Afișează</button>
+    </form>
+
+    <h2>Adaugă o cheltuială</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Salvează cheltuiala</button>
+    </form>
+
+    <h2>Cheltuielile lunii</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nume</th>
+                <th>Categorie</th>
+                <th>Sumă</th>
+                <th>Data plății</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.name }}</td>
+                    <td>{{ expense.get_category_display }}</td>
+                    <td>{{ expense.amount|floatformat:2 }} lei</td>
+                    <td>{{ expense.paid_on|date:"d.m.Y" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">
+                        Nu există cheltuieli în această lună.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

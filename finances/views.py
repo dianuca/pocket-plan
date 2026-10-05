@@ -1,16 +1,16 @@
 from datetime import date
-
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
-
 from dashboard.forms import MonthField
-
 from .forms import IncomeForm
 from .models import Income
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.exceptions import ValidationError
+from .forms import ExpenseForm, IncomeForm
+from .models import Expense, Income
+
 
 @login_required
 def income_list(request):
@@ -105,5 +105,51 @@ def income_delete(request, pk):
         {
             "income": income,
             "cancel_url": cancel_url,
+        },
+    )
+
+@login_required
+def expense_list(request):
+    selected_month = request.GET.get(
+        "month",
+        date.today().strftime("%Y-%m"),
+    )
+
+    try:
+        selected_month = MonthField().clean(selected_month)
+    except ValidationError:
+        return HttpResponseBadRequest("Lună invalidă.")
+
+    if request.method == "POST":
+        form = ExpenseForm(data=request.POST)
+
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.owner = request.user
+            expense.save()
+
+            month = expense.paid_on.strftime("%Y-%m")
+            url = reverse("expense-list")
+            return redirect(f"{url}?month={month}")
+    else:
+        form = ExpenseForm(initial={
+            "paid_on": date.fromisoformat(f"{selected_month}-01"),
+        })
+
+    year, month = map(int, selected_month.split("-"))
+
+    expenses = Expense.objects.filter(
+        owner=request.user,
+        paid_on__year=year,
+        paid_on__month=month,
+    ).order_by("-paid_on", "-pk")
+
+    return render(
+        request,
+        "finances/expense_list.html",
+        {
+            "form": form,
+            "expenses": expenses,
+            "selected_month": selected_month,
         },
     )
