@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Rezumat lunar | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Rezumat lunar</h1>
+    <p>Date demonstrative</p>
+
+    <dl>
+        <dt>Venituri</dt>
+        <dd>{{ income|floatformat:2 }} lei</dd>
+
+        <dt>Cheltuieli</dt>
+        <dd>{{ expenses|floatformat:2 }} lei</dd>
+
+        <dt>Bani rămași</dt>
+        <dd>{{ balance|floatformat:2 }} lei</dd>
+    </dl>
+{% endblock %}
