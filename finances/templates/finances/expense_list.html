@@ -34,6 +34,7 @@
                 <th>Categorie</th>
                 <th>Sumă</th>
                 <th>Data plății</th>
+                <th>Acțiuni</th>
             </tr>
         </thead>
         <tbody>
@@ -43,10 +44,13 @@
                     <td>{{ expense.get_category_display }}</td>
                     <td>{{ expense.amount|floatformat:2 }} lei</td>
                     <td>{{ expense.paid_on|date:"d.m.Y" }}</td>
+                    <td>
+                        <a href="{% url 'expense-edit' expense.pk %}">Editează</a>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4">
+                    <td colspan="5">
                         Nu există cheltuieli în această lună.
                     </td>
                 </tr>
