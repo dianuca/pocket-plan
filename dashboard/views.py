@@ -8,7 +8,16 @@ from django.shortcuts import render
 
 def monthly_summary(request):
     income = Decimal("5000.00")
-    expenses = Decimal("3200.00")
+    expense_items = [
+        {"name": "Chirie", "amount": Decimal("2500.00")},
+        {"name": "Utilități", "amount": Decimal("500.00")},
+        {"name": "Abonamente", "amount": Decimal("200.00")},
+    ]
+
+    expenses = sum(
+        (item["amount"] for item in expense_items),
+        Decimal("0.00"),
+    )
 
     selected_month = request.GET.get(
         "month",
@@ -28,6 +37,7 @@ def monthly_summary(request):
         "expenses": expenses,
         "balance": income - expenses,
         "selected_month": selected_month,
+        "expense_items": expense_items,
     }
 
     return render(request, "dashboard/summary.html", context)
