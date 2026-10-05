@@ -4,6 +4,7 @@ import re
 
 from django.http import HttpResponseBadRequest
 from django.shortcuts import render
+from .services import calculate_expenses 
 
 
 def monthly_summary(request):
@@ -14,11 +15,8 @@ def monthly_summary(request):
         {"name": "Abonamente", "amount": Decimal("200.00")},
     ]
 
-    expenses = sum(
-        (item["amount"] for item in expense_items),
-        Decimal("0.00"),
-    )
-
+    expenses = calculate_expenses(expense_items)
+    
     selected_month = request.GET.get(
         "month",
         date.today().strftime("%Y-%m"),
