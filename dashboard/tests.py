@@ -1,7 +1,8 @@
 from django.test import SimpleTestCase
 from decimal import Decimal
 from .services import calculate_expenses 
-
+from .services import installment_amount_for_month
+from .services import remaining_installments
 
 class DashboardPageTests(SimpleTestCase):
     def test_dashboard_displays_monthly_summary(self):
@@ -74,3 +75,63 @@ class FinancialCalculationTests(SimpleTestCase):
 
         self.assertEqual(total, Decimal("0.00"))
         self.assertIsInstance(total, Decimal)
+
+class InstallmentCalculationTests(SimpleTestCase):
+    def test_amount_applies_only_during_payment_months(self):
+        cases = [
+            ("2026-09", Decimal("0.00")),
+            ("2026-10", Decimal("200.00")),
+            ("2026-11", Decimal("200.00")),
+            ("2026-12", Decimal("200.00")),
+            ("2027-01", Decimal("0.00")),
+        ]
+
+        for month, expected in cases:
+            with self.subTest(month=month):
+                amount = installment_amount_for_month(
+                    monthly_amount=Decimal("200.00"),
+                    first_month="2026-10",
+                    number_of_installments=3,
+                    selected_month=month,
+                )
+
+                self.assertEqual(amount, expected)
+
+    def test_installments_continue_into_next_year(self):
+        cases = [
+            ("2026-12", Decimal("200.00")),
+            ("2027-01", Decimal("200.00")),
+            ("2027-02", Decimal("200.00")),
+            ("2027-03", Decimal("0.00")),
+        ]
+
+        for month, expected in cases:
+            with self.subTest(month=month):
+                amount = installment_amount_for_month(
+                    monthly_amount=Decimal("200.00"),
+                    first_month="2026-12",
+                    number_of_installments=3,
+                    selected_month=month,
+                )
+
+                self.assertEqual(amount, expected)
+
+    def test_remaining_installments_include_selected_month(self):
+        cases = [
+            ("2026-09", 3),
+            ("2026-10", 3),
+            ("2026-11", 2),
+            ("2026-12", 1),
+            ("2027-01", 0),
+            ("2027-06", 0),
+        ]
+
+        for month, expected in cases:
+            with self.subTest(month=month):
+                remaining = remaining_installments(
+                    first_month="2026-10",
+                    number_of_installments=3,
+                    selected_month=month,
+                )
+
+                self.assertEqual(remaining, expected)
