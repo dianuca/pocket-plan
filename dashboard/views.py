@@ -11,7 +11,8 @@ from .services import (
 )
 from .forms import InstallmentPreviewForm
 from django.db.models import Sum
-from finances.models import Income
+from finances.models import Expense, Income 
+
 
 @login_required
 def monthly_summary(request):
@@ -39,11 +40,15 @@ def monthly_summary(request):
     if income is None:
         income = Decimal("0.00")
 
-    expense_items = [
-        {"name": "Chirie", "amount": Decimal("2500.00")},
-        {"name": "Utilități", "amount": Decimal("500.00")},
-        {"name": "Abonamente", "amount": Decimal("200.00")},
-    ]
+    expense_items = list(
+        Expense.objects.filter(
+            owner=request.user,
+            paid_on__year=year,
+            paid_on__month=month,
+        )
+        .order_by("-paid_on", "-pk")
+        .values("name", "amount")
+    )
 
     installment_total = installment_amount_for_month(
         monthly_amount=Decimal("200.00"),
