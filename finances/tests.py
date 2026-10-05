@@ -370,3 +370,58 @@ class ExpensePageTests(TestCase):
             response,
             "/accounts/login/?next=/finances/expenses/",
         )
+
+class ExpenseEditTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+        )
+        self.client.force_login(self.user)
+
+        self.expense = Expense.objects.create(
+            owner=self.user,
+            name="Netflix",
+            category=Expense.Category.SUBSCRIPTIONS,
+            amount=Decimal("50.00"),
+            paid_on=date(2026, 10, 10),
+        )
+
+    def test_owner_can_edit_expense(self):
+        response = self.client.post(
+            f"/finances/expenses/{self.expense.pk}/edit/",
+            data={
+                "name": "Netflix corectat",
+                "category": Expense.Category.SUBSCRIPTIONS,
+                "amount": "60.00",
+                "paid_on": "2026-11-10",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            "/finances/expenses/?month=2026-11",
+        )
+
+        self.expense.refresh_from_db()
+
+        self.assertEqual(self.expense.name, "Netflix corectat")
+        self.assertEqual(self.expense.amount, Decimal("60.00"))
+        self.assertEqual(self.expense.paid_on, date(2026, 11, 10))
+        self.assertEqual(self.expense.owner, self.user)
+
+    def test_other_user_cannot_edit_expense(self):
+        other_user = get_user_model().objects.create_user(
+            username="otheruser",
+        )
+        self.client.force_login(other_user)
+
+        url = f"/finances/expenses/{self.expense.pk}/edit/"
+
+        for method in ["get", "post"]:
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 404)
+
+        self.expense.refresh_from_db()
+        self.assertEqual(self.expense.amount, Decimal("50.00"))
+

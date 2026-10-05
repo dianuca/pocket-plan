@@ -153,3 +153,30 @@ def expense_list(request):
             "selected_month": selected_month,
         },
     )
+
+@login_required
+def expense_edit(request, pk):
+    expense = get_object_or_404(
+        Expense,
+        pk=pk,
+        owner=request.user,
+    )
+
+    if request.method == "POST":
+        form = ExpenseForm(data=request.POST, instance=expense)
+
+        if form.is_valid():
+            expense = form.save()
+
+            month = expense.paid_on.strftime("%Y-%m")
+            url = reverse("expense-list")
+            return redirect(f"{url}?month={month}")
+    else:
+        form = ExpenseForm(instance=expense)
+
+    return render(
+        request,
+        "finances/expense_edit.html",
+        {"form": form, "expense": expense},
+    )
+
