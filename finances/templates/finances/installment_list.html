@@ -52,6 +52,9 @@
                         <a href="{% url 'installment-edit' row.installment.pk %}">
                             Editează
                         </a>
+                        <a href="{% url 'installment-delete' row.installment.pk %}">
+                            Șterge
+                        </a>
                     </td>
                 </tr>
             {% empty %}

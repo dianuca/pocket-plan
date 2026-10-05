@@ -297,3 +297,27 @@ def installment_edit(request, pk):
         {"form": form, "installment": installment},
     )
 
+@login_required
+def installment_delete(request, pk):
+    installment = get_object_or_404(
+        Installment,
+        pk=pk,
+        owner=request.user,
+    )
+
+    month = installment.first_due_on.strftime("%Y-%m")
+    cancel_url = f"{reverse('installment-list')}?month={month}"
+
+    if request.method == "POST":
+        installment.delete()
+        return redirect(cancel_url)
+
+    return render(
+        request,
+        "finances/installment_confirm_delete.html",
+        {
+            "installment": installment,
+            "cancel_url": cancel_url,
+        },
+    )
+

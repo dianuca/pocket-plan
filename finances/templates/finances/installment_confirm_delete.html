@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Șterge rata | PocketPlan{% endblock %}
+
+{% block content %}
+    <h1>Șterge rata</h1>
+
+    <p>
+        Sigur vrei să ștergi rata „{{ installment.name }}”,
+        de {{ installment.monthly_amount|floatformat:2 }} lei/lună?
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmă ștergerea</button>
+    </form>
+
+    <a href="{{ cancel_url }}">Anulează</a>
+{% endblock %}
