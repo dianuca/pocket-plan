@@ -44,6 +44,7 @@
                     <td>{{ income.received_on|date:"d.m.Y" }}</td>
                     <td>
                         <a href="{% url 'income-edit' income.pk %}">Editează</a>
+                        <a href="{% url 'income-delete' income.pk %}">Șterge</a>
                     </td>
                 </tr>
             {% empty %}

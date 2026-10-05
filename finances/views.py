@@ -84,3 +84,26 @@ def income_edit(request, pk):
         {"form": form, "income": income},
     )
 
+@login_required
+def income_delete(request, pk):
+    income = get_object_or_404(
+        Income,
+        pk=pk,
+        owner=request.user,
+    )
+
+    month = income.received_on.strftime("%Y-%m")
+    cancel_url = f"{reverse('income-list')}?month={month}"
+
+    if request.method == "POST":
+        income.delete()
+        return redirect(cancel_url)
+
+    return render(
+        request,
+        "finances/income_confirm_delete.html",
+        {
+            "income": income,
+            "cancel_url": cancel_url,
+        },
+    )
