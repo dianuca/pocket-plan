@@ -48,3 +48,11 @@ class DashboardPageTests(SimpleTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_dashboard_displays_expense_list(self):
+        response = self.client.get("/dashboard/")
+
+        self.assertIn("expense_items", response.context)
+        self.assertContains(response, "Chirie")
+        self.assertContains(response, "Utilități")
+        self.assertContains(response, "Abonamente")

@@ -27,4 +27,17 @@
         <dt>Bani rămași</dt>
         <dd>{{ balance|floatformat:2 }} lei</dd>
     </dl>
+
+    <h2>Cheltuieli</h2>
+    <ul>
+        {% for item in expense_items %}
+            <li>
+                {{ item.name }}:
+                {{ item.amount|floatformat:2 }} lei
+            </li>
+        {% empty %}
+            <li>Nu există cheltuieli pentru această lună.</li>
+        {% endfor %}
+    </ul>
+    
 {% endblock %}
