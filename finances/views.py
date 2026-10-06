@@ -187,9 +187,14 @@ def expense_edit(request, pk):
     else:
         form = ExpenseForm(instance=expense)
 
+    template = "finances/expense_edit.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/expense_edit_form.html"
+
     return render(
         request,
-        "finances/expense_edit.html",
+        template,
         {"form": form, "expense": expense},
     )
 
@@ -208,9 +213,14 @@ def expense_delete(request, pk):
         expense.delete()
         return redirect(cancel_url)
 
+    template = "finances/expense_confirm_delete.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/expense_delete_form.html"
+
     return render(
         request,
-        "finances/expense_confirm_delete.html",
+        template,
         {
             "expense": expense,
             "cancel_url": cancel_url,

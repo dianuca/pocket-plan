@@ -1,0 +1,19 @@
+<h2 id="delete-modal-title">Șterge cheltuiala</h2>
+
+<p>
+    Sigur vrei să ștergi cheltuiala
+    <strong>{{ expense.name }}</strong>,
+    în valoare de
+    <strong>{{ expense.amount|floatformat:2 }} lei</strong>?
+</p>
+
+<form method="post" action="{% url 'expense-delete' expense.pk %}">
+    {% csrf_token %}
+
+    <div class="modal-actions">
+        <button type="button" data-close-modal>Anulează</button>
+        <button type="submit" class="danger-button">
+            Șterge cheltuiala
+        </button>
+    </div>
+</form>
