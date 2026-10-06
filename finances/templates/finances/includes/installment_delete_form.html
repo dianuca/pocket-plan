@@ -1,0 +1,22 @@
+<h2 id="delete-modal-title">Șterge rata</h2>
+
+<p>
+    Sigur vrei să ștergi rata
+    <strong>{{ installment.name }}</strong>,
+    cu suma lunară de
+    <strong>{{ installment.monthly_amount|floatformat:2 }} lei</strong>?
+</p>
+
+<form
+    method="post"
+    action="{% url 'installment-delete' installment.pk %}"
+>
+    {% csrf_token %}
+
+    <div class="modal-actions">
+        <button type="button" data-close-modal>Anulează</button>
+        <button type="submit" class="danger-button">
+            Șterge rata
+        </button>
+    </div>
+</form>
