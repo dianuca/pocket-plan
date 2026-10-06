@@ -46,8 +46,8 @@ class DashboardPageTests(TestCase):
             response.context["selected_month"],
             "2026-10",
         )
-        self.assertContains(response, 'type="month"')
-        self.assertContains(response, 'value="2026-10"')
+        self.assertContains(response, "Luna selectată: 2026-10")
+        self.assertTemplateUsed(response, "includes/month_picker.html")
 
     def test_dashboard_rejects_invalid_month(self):
         response = self.client.get(

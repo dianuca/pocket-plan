@@ -3,27 +3,24 @@
 {% block title %}Cheltuieli | PocketPlan{% endblock %}
 
 {% block content %}
-    <h1>Cheltuieli</h1>
+    <div class="page-heading">
+        <div>
+            <h1>Cheltuieli</h1>
+            <p>Urmărește unde se duc banii în fiecare lună.</p>
+        </div>
 
-    <form method="get">
-        <label for="month">Luna</label>
-        <input
-            id="month"
-            type="month"
-            name="month"
-            value="{{ selected_month }}"
-            required
-        >
-        <button type="submit">Afișează</button>
-    </form>
+        {% include "includes/month_picker.html" %}
+    </div>
 
-    <h2>Adaugă o cheltuială</h2>
+    <details class="entry-panel" {% if form.errors %}open{% endif %}>
+        <summary> Adaugă o cheltuială</summary>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Salvează cheltuiala</button>
-    </form>
+        <form method="post" class="entry-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Salvează cheltuiala</button>
+        </form>
+    </details>
 
     <h2>Cheltuielile lunii</h2>
 
@@ -45,9 +42,18 @@
                     <td>{{ expense.amount|floatformat:2 }} lei</td>
                     <td>{{ expense.paid_on|date:"d.m.Y" }}</td>
                     <td>
-                        <a href="{% url 'expense-edit' expense.pk %}">Editează</a>
-                        <a href="{% url 'expense-delete' expense.pk %}">Șterge</a>
-                    </td>
+                        <a
+                            href="{% url 'expense-edit' expense.pk %}"
+                            class="edit-modal-link"
+                        >
+                            Editează
+                        </a>
+                        <a
+                            href="{% url 'expense-delete' expense.pk %}"
+                            class="delete-modal-link"
+                        >
+                            Șterge
+                        </a>                    </td>
                 </tr>
             {% empty %}
                 <tr>
@@ -58,4 +64,121 @@
             {% endfor %}
         </tbody>
     </table>
+<dialog
+    id="edit-modal"
+    class="edit-modal"
+    aria-labelledby="edit-modal-title"
+>
+    <div id="edit-modal-content"></div>
+</dialog>
+<dialog
+    id="delete-modal"
+    class="edit-modal"
+    aria-labelledby="delete-modal-title"
+>
+    <div id="delete-modal-content"></div>
+</dialog>
+<script>
+    const editModal = document.getElementById("edit-modal");
+    const modalContent = document.getElementById("edit-modal-content");
+
+    async function requestForm(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Cererea nu a putut fi finalizată.");
+        }
+
+        return response;
+    }
+
+    document.querySelectorAll(".edit-modal-link").forEach(link => {
+        link.addEventListener("click", async event => {
+            event.preventDefault();
+
+            try {
+                const response = await requestForm(link.href);
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+
+                modalContent.innerHTML = await response.text();
+                editModal.showModal();
+            } catch (error) {
+                window.location.href = link.href;
+            }
+        });
+    });
+
+    modalContent.addEventListener("click", event => {
+        if (event.target.closest("[data-close-modal]")) {
+            editModal.close();
+        }
+    });
+
+    modalContent.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const form = event.target;
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        try {
+            const response = await requestForm(form.action, {
+                method: "POST",
+                body: new FormData(form)
+            });
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            modalContent.innerHTML = await response.text();
+            modalContent.querySelector("input, select")?.focus();
+        } catch (error) {
+            alert(
+                "Salvarea nu a putut fi confirmată. " +
+                "Reîncarcă lista pentru a verifica."
+            );
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+    const deleteModal = document.getElementById("delete-modal");
+const deleteContent = document.getElementById("delete-modal-content");
+
+document.querySelectorAll(".delete-modal-link").forEach(link => {
+    link.addEventListener("click", async event => {
+        event.preventDefault();
+
+        try {
+            const response = await requestForm(link.href);
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            deleteContent.innerHTML = await response.text();
+            deleteModal.showModal();
+        } catch (error) {
+            window.location.href = link.href;
+        }
+    });
+});
+
+deleteContent.addEventListener("click", event => {
+    if (event.target.closest("[data-close-modal]")) {
+        deleteModal.close();
+    }
+});
+</script>
 {% endblock %}

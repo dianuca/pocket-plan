@@ -80,9 +80,14 @@ def income_edit(request, pk):
     else:
         form = IncomeForm(instance=income)
 
+        template = "finances/income_edit.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/income_edit_form.html"
+
     return render(
         request,
-        "finances/income_edit.html",
+        template,
         {"form": form, "income": income},
     )
 
@@ -101,14 +106,20 @@ def income_delete(request, pk):
         income.delete()
         return redirect(cancel_url)
 
+    template = "finances/income_confirm_delete.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/income_delete_form.html"
+
     return render(
         request,
-        "finances/income_confirm_delete.html",
+        template,
         {
             "income": income,
             "cancel_url": cancel_url,
         },
     )
+
 
 @login_required
 def expense_list(request):
@@ -176,9 +187,14 @@ def expense_edit(request, pk):
     else:
         form = ExpenseForm(instance=expense)
 
+    template = "finances/expense_edit.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/expense_edit_form.html"
+
     return render(
         request,
-        "finances/expense_edit.html",
+        template,
         {"form": form, "expense": expense},
     )
 
@@ -197,9 +213,14 @@ def expense_delete(request, pk):
         expense.delete()
         return redirect(cancel_url)
 
+    template = "finances/expense_confirm_delete.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/expense_delete_form.html"
+
     return render(
         request,
-        "finances/expense_confirm_delete.html",
+        template,
         {
             "expense": expense,
             "cancel_url": cancel_url,
@@ -291,9 +312,14 @@ def installment_edit(request, pk):
     else:
         form = InstallmentForm(instance=installment)
 
+    template = "finances/installment_edit.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/installment_edit_form.html"
+
     return render(
         request,
-        "finances/installment_edit.html",
+        template,
         {"form": form, "installment": installment},
     )
 
@@ -312,9 +338,14 @@ def installment_delete(request, pk):
         installment.delete()
         return redirect(cancel_url)
 
+    template = "finances/installment_confirm_delete.html"
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        template = "finances/includes/installment_delete_form.html"
+
     return render(
         request,
-        "finances/installment_confirm_delete.html",
+        template,
         {
             "installment": installment,
             "cancel_url": cancel_url,

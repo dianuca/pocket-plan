@@ -4,23 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <title>{% block title %}PocketPlan{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
-<body>
-    <header>
-        <p>PocketPlan</p>
+
+<body class="{% if user.is_authenticated %}app-page{% else %}auth-page{% endif %}">
     {% if user.is_authenticated %}
-        <p>Salut, {{ user.username }}!</p>
+        <aside class="sidebar">
+            <a class="brand" href="{% url 'monthly-summary' %}">
+                <span class="brand-mark">P</span>
+                PocketPlan
+            </a>
 
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Deconectare</button>
-        </form>
+            <p class="sidebar-label">BUGETUL TĂU</p>
+
+            <nav class="sidebar-nav" aria-label="Navigare principală">
+                <a href="{% url 'monthly-summary' %}"
+                   class="{% if request.resolver_match.url_name == 'monthly-summary' %}active{% endif %}">
+                    Rezumat
+                </a>
+
+                <a href="{% url 'income-list' %}"
+                   class="{% if request.resolver_match.url_name == 'income-list' or request.resolver_match.url_name == 'income-edit' or request.resolver_match.url_name == 'income-delete' %}active{% endif %}">
+                    Venituri
+                </a>
+
+                <a href="{% url 'expense-list' %}"
+                   class="{% if request.resolver_match.url_name == 'expense-list' or request.resolver_match.url_name == 'expense-edit' or request.resolver_match.url_name == 'expense-delete' %}active{% endif %}">
+                    Cheltuieli
+                </a>
+
+                <a href="{% url 'installment-list' %}"
+                   class="{% if request.resolver_match.url_name == 'installment-list' or request.resolver_match.url_name == 'installment-edit' or request.resolver_match.url_name == 'installment-delete' %}active{% endif %}">
+                    Rate
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="user-name">{{ user.username }}</span>
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="logout-button" type="submit">
+                        Deconectare
+                    </button>
+                </form>
+            </div>
+        </aside>
     {% endif %}
-    </header>
 
-    <main>
+    <main class="{% if user.is_authenticated %}app-content{% else %}auth-content{% endif %}">
+        {% if not user.is_authenticated %}
+            <a class="brand auth-brand" href="{% url 'login' %}">
+                <span class="brand-mark">P</span>
+                PocketPlan
+            </a>
+        {% endif %}
+
         {% block content %}{% endblock %}
     </main>
 </body>

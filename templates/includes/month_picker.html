@@ -1,0 +1,60 @@
+<details class="month-picker">
+    <summary>
+        Luna selectată: {{ selected_month }}
+    </summary>
+
+    <div class="month-picker-popup">
+        <label for="picker-year">Anul</label>
+        <input
+            id="picker-year"
+            type="number"
+            min="1"
+            max="9999"
+            value="{{ selected_month|slice:':4' }}"
+        >
+
+        <form method="get" class="month-grid" id="month-grid">
+        </form>
+    </div>
+</details>
+<script>
+    const yearInput = document.getElementById("picker-year");
+    const monthGrid = document.getElementById("month-grid");
+    const selectedMonth = "{{ selected_month|escapejs }}";
+
+    const months = [
+        "Ian", "Feb", "Mar", "Apr",
+        "Mai", "Iun", "Iul", "Aug",
+        "Sep", "Oct", "Noi", "Dec"
+    ];
+
+    function renderMonths() {
+        monthGrid.replaceChildren();
+
+        const year = Number(yearInput.value);
+        const validYear = Number.isInteger(year)
+            && year >= 1
+            && year <= 9999;
+
+        months.forEach((label, index) => {
+            const button = document.createElement("button");
+            const month = String(index + 1).padStart(2, "0");
+            const value = `${String(year).padStart(4, "0")}-${month}`;
+
+            button.type = "submit";
+            button.name = "month";
+            button.value = value;
+            button.textContent = label;
+            button.disabled = !validYear;
+
+            if (value === selectedMonth) {
+                button.classList.add("selected");
+            }
+
+            monthGrid.appendChild(button);
+        });
+    }
+
+    yearInput.addEventListener("input", renderMonths);
+    renderMonths();
+</script>
