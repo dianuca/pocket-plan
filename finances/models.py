@@ -3,6 +3,27 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 
+
+class SavingsAccount(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    opening_balance = models.DecimalField(max_digits=12, decimal_places=2)
+    started_on = models.DateField()
+
+
+class SavingsMovement(models.Model):
+    class Kind(models.TextChoices):
+        DEPOSIT = "deposit", "Depunere"
+        WITHDRAWAL = "withdrawal", "Retragere"
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    occurred_on = models.DateField()
+    description = models.CharField(max_length=200, blank=True)
+
 class Income(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -12,6 +12,7 @@ from .services import (
 from .forms import InstallmentPreviewForm
 from django.db.models import Sum
 from finances.models import Expense, Income, Installment
+from finances.savings import savings_summary
 
 
 @login_required
@@ -97,11 +98,13 @@ def monthly_summary(request):
         })
 
     expenses = calculate_expenses(expense_items) + installment_total
+    savings = savings_summary(request.user, selected_month)
 
     context = {
         "income": income,
         "expenses": expenses,
-        "balance": income - expenses,
+        "balance": income - expenses - savings["savings_deposits"] + savings["savings_withdrawals"],
+        **savings,
         "selected_month": selected_month,
         "expense_items": expense_items,
         "installment_items": installment_items,
