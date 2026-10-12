@@ -24,10 +24,10 @@
 <p>Total fără rate: <strong>{{ direct_expenses|floatformat:2 }} lei</strong></p></section>
 <section class="panel report-section" aria-labelledby="report-installment-title">
 <h2 id="report-installment-title">Rate active</h2>
-<div class="history-table-scroll"><table><thead><tr><th>Nume</th><th>Rate rămase</th><th>Sumă lunară</th></tr></thead><tbody>
+<div class="history-table-scroll"><table><thead><tr><th>Nume</th><th>Rate rămase</th><th>Sumă în perioadă</th></tr></thead><tbody>
 {% for item in installment_items %}<tr><td>{{ item.name }}</td><td>{{ item.remaining }}</td><td>{{ item.amount|floatformat:2 }} lei</td></tr>
 {% empty %}<tr><td colspan="3">Nu există rate active în această lună.</td></tr>{% endfor %}</tbody></table></div>
-<p>Total rate: <strong>{{ installment_total|floatformat:2 }} lei</strong>. Ratele rămase includ luna selectată și reprezintă un calcul calendaristic.</p></section>
+<p>Total rate: <strong>{{ installment_total|floatformat:2 }} lei</strong>. Ratele rămase sunt calculate înaintea primei scadențe din perioadă, fără confirmarea plății.</p></section>
 <section class="panel report-section" aria-labelledby="report-personal-title">
 <h2 id="report-personal-title">Buget pentru mine</h2>
 <p>Alocat: <strong>{{ personal_allocated|floatformat:2 }} lei</strong> · Cheltuit: <strong>{{ personal_spent|floatformat:2 }} lei</strong> · Rămas: <strong {% if personal_remaining < 0 %}class="savings-negative"{% endif %}>{{ personal_remaining|floatformat:2 }} lei</strong></p>

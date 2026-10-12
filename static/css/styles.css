@@ -479,13 +479,49 @@ td a {
     max-width: 100%;
 }
 
+.month-picker-control {
+    position: relative;
+    max-width: 100%;
+}
+
+.budget-period-label {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    display: block;
+    padding-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.month-picker[open] + .budget-period-label {
+    display: none;
+}
+
 .month-picker summary {
-    padding: 11px 16px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 12px 20px;
+    border: 1px solid #0f766e;
+    border-radius: 12px;
+    background: #0f766e;
+    color: #fff;
     font-weight: 600;
+    font-size: 16px;
     cursor: pointer;
+}
+
+.month-picker summary:hover,
+.month-picker[open] summary {
+    background: #115e59;
+    border-color: #115e59;
+}
+
+.month-picker summary:focus-visible {
+    outline: 3px solid #0f766e;
+    outline-offset: 3px;
 }
 
 .month-picker-popup {

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Luna mea | PocketPlan{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>Luna mea</h1><p>Alege când începe perioada ta de buget.</p></div><a href="{% url 'monthly-summary' %}">Înapoi la rezumat</a></div>
+<section class="panel">
+    <p>Perioada curentă: <strong>{{ period_start|date:"d.m.Y" }} – {{ period_end|date:"d.m.Y" }}</strong></p>
+    <p>De exemplu, ziua 5 înseamnă 5 octombrie–4 noiembrie. Luna este denumită după luna în care începe.</p>
+    <p>Schimbarea zilei recalculează toate perioadele afișate, inclusiv istoricul. Datele și sumele înregistrate nu se modifică. Alocarea personală rămâne asociată lunii de început. Ratele și cheltuielile recurente intră în perioada scadenței lor.</p>
+    <form method="post">{% csrf_token %}{{ form.as_p }}<div class="modal-actions"><a href="{% url 'monthly-summary' %}">Anulează</a><button type="submit">Salvează ziua</button></div></form>
+</section>
+{% endblock %}

@@ -1,6 +1,8 @@
+{% load budget_labels %}
+<div class="month-picker-control">
 <details class="month-picker">
     <summary>
-        Luna selectată: {{ selected_month }}
+        Luna selectată: {{ selected_month|budget_month_label }}
     </summary>
 
     <div class="month-picker-popup">
@@ -17,6 +19,8 @@
         </form>
     </div>
 </details>
+{% if period_start %}<small class="budget-period-label">{{ period_start|date:"d.m.Y" }} – {{ period_end|date:"d.m.Y" }}</small>{% endif %}
+</div>
 <script>
     const yearInput = document.getElementById("picker-year");
     const monthGrid = document.getElementById("month-grid");

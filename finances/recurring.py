@@ -1,4 +1,3 @@
-from calendar import monthrange
 from datetime import date
 
 from django import forms
@@ -13,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from dashboard.forms import MonthField
 from .models import Expense, RecurringExpense, RecurringExpenseOccurrence
+from .periods import budget_period, month_date, month_index
 
 
 class RecurringExpenseForm(forms.ModelForm):
@@ -34,21 +34,26 @@ class RecurringExpenseForm(forms.ModelForm):
 
 
 def pending_recurring(owner, selected_month):
-    month = date.fromisoformat(f"{selected_month}-01")
-    rules = RecurringExpense.objects.filter(owner=owner, active=True, starts_on__lte=month).exclude(
-        pk__in=RecurringExpenseOccurrence.objects.filter(rule__owner=owner, month=month).values("rule_id"),
-    ).order_by("name", "pk")
-    return [{"rule": rule, "paid_on": month.replace(day=min(rule.payment_day, monthrange(month.year, month.month)[1]))}
-            for rule in rules]
+    start, end = budget_period(owner, selected_month)
+    pending = []
+    for index in range(month_index(start), month_index(end) + 1):
+        month = month_date(index)
+        rules = RecurringExpense.objects.filter(owner=owner, active=True, starts_on__lte=month).exclude(
+            pk__in=RecurringExpenseOccurrence.objects.filter(rule__owner=owner, month=month).values("rule_id"),
+        ).order_by("name", "pk")
+        for rule in rules:
+            paid_on = month_date(index, rule.payment_day)
+            if start <= paid_on <= end:
+                pending.append({"rule": rule, "paid_on": paid_on, "occurrence_month": month})
+    return sorted(pending, key=lambda row: (row["paid_on"], row["rule"].pk))
 
 
 @transaction.atomic
 def generate_recurring(owner, selected_month):
-    month = date.fromisoformat(f"{selected_month}-01")
     count = 0
     for row in pending_recurring(owner, selected_month):
         rule = row["rule"]
-        occurrence, created = RecurringExpenseOccurrence.objects.get_or_create(rule=rule, month=month)
+        occurrence, created = RecurringExpenseOccurrence.objects.get_or_create(rule=rule, month=row["occurrence_month"])
         if not created:
             continue
         expense = Expense.objects.create(owner=owner, name=rule.name, category=rule.category,

@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.core.exceptions import ValidationError
 from finances.models import Income, Expense, SavingsMovement
 from .forms import MonthField
+from finances.periods import budget_period, period_month
 from django.shortcuts import render
 from .services import (
     installment_amount_for_month,
@@ -18,7 +19,7 @@ from .forms import InstallmentPreviewForm
 def monthly_summary(request):
     selected_month = request.GET.get(
         "month",
-        date.today().strftime("%Y-%m"),
+        period_month(request.user),
     )
 
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}", selected_month):
@@ -27,7 +28,12 @@ def monthly_summary(request):
         date.fromisoformat(f"{selected_month}-01")
     except ValueError:
         return HttpResponseBadRequest("Luna selectată nu există.")
-    return render(request, "dashboard/summary.html", monthly_context(request.user, selected_month))
+    from finances.budget_settings import BudgetPreferenceForm
+    from finances.periods import start_day_for
+
+    context = monthly_context(request.user, selected_month)
+    context["settings_form"] = BudgetPreferenceForm(prefix="budget-settings", initial={"start_day": start_day_for(request.user)})
+    return render(request, "dashboard/summary.html", context)
 
 @login_required
 def installment_preview(request):
@@ -69,22 +75,19 @@ def installment_preview(request):
 @login_required
 def monthly_report(request):
     try:
-        selected_month = MonthField().clean(request.GET.get("month", date.today().strftime("%Y-%m")))
+        selected_month = MonthField().clean(request.GET.get("month", period_month(request.user)))
     except ValidationError:
         return HttpResponseBadRequest("Lună invalidă.")
     return render(request, "dashboard/monthly_report.html", report_context(request.user, selected_month))
 
 
 def report_context(owner, selected_month):
-    year, month = map(int, selected_month.split("-"))
+    start, end = budget_period(owner, selected_month)
     context = monthly_context(owner, selected_month)
     context.update({
-        "report_incomes": Income.objects.filter(owner=owner, received_on__year=year,
-                                               received_on__month=month).order_by("received_on", "pk"),
-        "report_expenses": Expense.objects.filter(owner=owner, paid_on__year=year,
-                                                 paid_on__month=month).order_by("paid_on", "pk"),
-        "report_transfers": SavingsMovement.objects.filter(owner=owner, occurred_on__year=year,
-                                                           occurred_on__month=month).order_by("occurred_on", "pk"),
+        "report_incomes": Income.objects.filter(owner=owner, received_on__range=(start, end)).order_by("received_on", "pk"),
+        "report_expenses": Expense.objects.filter(owner=owner, paid_on__range=(start, end)).order_by("paid_on", "pk"),
+        "report_transfers": SavingsMovement.objects.filter(owner=owner, occurred_on__range=(start, end)).order_by("occurred_on", "pk"),
         "direct_expenses": context["expenses"] - context["installment_total"],
     })
     return context
@@ -95,7 +98,7 @@ def monthly_report_pdf(request):
     from .pdf import build_monthly_report_pdf
 
     try:
-        month = MonthField().clean(request.GET.get("month", date.today().strftime("%Y-%m")))
+        month = MonthField().clean(request.GET.get("month", period_month(request.user)))
     except ValidationError:
         return HttpResponseBadRequest("Lună invalidă.")
     response = HttpResponse(build_monthly_report_pdf(report_context(request.user, month)), content_type="application/pdf")

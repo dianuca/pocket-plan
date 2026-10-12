@@ -1,4 +1,3 @@
-from calendar import monthrange
 from datetime import date
 from decimal import Decimal
 
@@ -13,6 +12,7 @@ from django.urls import reverse
 
 from dashboard.forms import MonthField
 from .models import SavingsAccount, SavingsMovement
+from .periods import budget_period, month_index, month_key, month_date, period_context, period_month
 
 
 class SavingsAccountForm(forms.ModelForm):
@@ -94,8 +94,7 @@ class SavingsMovementForm(forms.ModelForm):
 
 
 def savings_summary(owner, selected_month):
-    year, month = map(int, selected_month.split("-"))
-    end = date(year, month, monthrange(year, month)[1])
+    start, end = budget_period(owner, selected_month)
     account = SavingsAccount.objects.filter(owner=owner).first()
     zero = Decimal("0.00")
     result = {"savings_balance": zero, "savings_deposits": zero,
@@ -107,7 +106,7 @@ def savings_summary(owner, selected_month):
     )
     totals = dict(movements.values("kind").annotate(total=Sum("amount"))
                   .values_list("kind", "total"))
-    monthly = dict(movements.filter(occurred_on__year=year, occurred_on__month=month)
+    monthly = dict(movements.filter(occurred_on__range=(start, end))
                    .values("kind").annotate(total=Sum("amount"))
                    .values_list("kind", "total"))
     balance = account.opening_balance + totals.get("deposit", zero) - totals.get("withdrawal", zero)
@@ -120,34 +119,34 @@ def savings_summary(owner, selected_month):
 @login_required
 def savings_list(request):
     try:
-        selected_month = MonthField().clean(request.GET.get("month", date.today().strftime("%Y-%m")))
+        selected_month = MonthField().clean(request.GET.get("month", period_month(request.user)))
     except ValidationError:
         return HttpResponseBadRequest("Lună invalidă.")
     account = SavingsAccount.objects.filter(owner=request.user).first()
     if account is None:
         form = SavingsAccountForm(
             request.POST if request.method == "POST" else None,
-            prefix="opening", initial={"opening_balance": "0.00", "started_on": f"{selected_month}-01"},
+            prefix="opening", initial={"opening_balance": "0.00", "started_on": budget_period(request.user, selected_month)[0]},
         )
     else:
         form = SavingsMovementForm(
             request.POST if request.method == "POST" else None, account=account,
-            prefix="movement", initial={"occurred_on": f"{selected_month}-01"},
+            prefix="movement", initial={"occurred_on": budget_period(request.user, selected_month)[0]},
         )
     if request.method == "POST" and form.is_valid():
         record = form.save(commit=False)
         record.owner = request.user
         record.save()
-        month = (record.started_on if account is None else record.occurred_on).strftime("%Y-%m")
+        month = period_month(request.user, record.started_on if account is None else record.occurred_on)
         return redirect(f"{reverse('savings-list')}?month={month}")
-    year, month = map(int, selected_month.split("-"))
+    start, end = budget_period(request.user, selected_month)
     movements = SavingsMovement.objects.filter(
-        owner=request.user, occurred_on__year=year, occurred_on__month=month,
+        owner=request.user, occurred_on__range=(start, end),
     ).order_by("-occurred_on", "-pk")
     return render(request, "finances/savings_list.html", {
         "account": account, "form": form, "movements": movements,
         "selected_month": selected_month, "savings_evolution": savings_evolution(request.user, selected_month),
-        **savings_summary(request.user, selected_month),
+        **savings_summary(request.user, selected_month), **period_context(request.user, selected_month),
     })
 
 
@@ -155,23 +154,23 @@ def savings_evolution(owner, selected_month):
     account = SavingsAccount.objects.filter(owner=owner).first()
     if account is None:
         return []
-    year, month = map(int, selected_month.split("-"))
-    end_index = (year - 1) * 12 + month - 1
-    start_index = max(0, end_index - 11, (account.started_on.year - 1) * 12 + account.started_on.month - 1)
+    end_index = month_index(date.fromisoformat(f"{selected_month}-01"))
+    account_index = month_index(date.fromisoformat(f"{period_month(owner, account.started_on)}-01"))
+    start_index = max(0, end_index - 11, account_index)
     points = []
     balance = account.opening_balance
     movements = iter(SavingsMovement.objects.filter(
         owner=owner, occurred_on__gte=account.started_on,
-        occurred_on__lte=date(year, month, monthrange(year, month)[1]),
+        occurred_on__lte=budget_period(owner, selected_month)[1],
     ).order_by("occurred_on", "pk"))
     movement = next(movements, None)
     for index in range(start_index, end_index + 1):
-        point_year, point_month = divmod(index, 12)
-        end = date(point_year + 1, point_month + 1, monthrange(point_year + 1, point_month + 1)[1])
+        key = month_key(month_date(index))
+        end = budget_period(owner, key)[1]
         while movement is not None and movement.occurred_on <= end:
             balance += movement.amount if movement.kind == SavingsMovement.Kind.DEPOSIT else -movement.amount
             movement = next(movements, None)
-        points.append({"month": end.strftime("%Y-%m"), "balance": balance})
+        points.append({"month": key, "balance": balance})
     scale = max((abs(point["balance"]) for point in points), default=Decimal("0.00"))
     for point in points:
         point["height"] = int(abs(point["balance"]) / scale * 100) if scale else 0
@@ -188,13 +187,13 @@ def savings_edit(request, pk):
     )
     if request.method == "POST" and form.is_valid():
         movement = form.save()
-        return redirect(f"{reverse('savings-list')}?month={movement.occurred_on:%Y-%m}")
+        return redirect(f"{reverse('savings-list')}?month={period_month(request.user, movement.occurred_on)}")
     template = "finances/savings_action.html"
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         template = "finances/includes/savings_action_form.html"
     return render(request, template, {
         "form": form, "movement": movement, "deleting": False,
-        "cancel_url": f"{reverse('savings-list')}?month={movement.occurred_on:%Y-%m}",
+        "cancel_url": f"{reverse('savings-list')}?month={period_month(request.user, movement.occurred_on)}",
     })
 
 
@@ -207,20 +206,20 @@ def savings_account_edit(request):
     )
     if request.method == "POST" and form.is_valid():
         account = form.save()
-        return redirect(f"{reverse('savings-list')}?month={account.started_on:%Y-%m}")
+        return redirect(f"{reverse('savings-list')}?month={period_month(request.user, account.started_on)}")
     template = "finances/savings_action.html"
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         template = "finances/includes/savings_action_form.html"
     return render(request, template, {
         "form": form, "editing_account": True,
-        "cancel_url": f"{reverse('savings-list')}?month={account.started_on:%Y-%m}",
+        "cancel_url": f"{reverse('savings-list')}?month={period_month(request.user, account.started_on)}",
     })
 
 
 @login_required
 def savings_delete(request, pk):
     movement = get_object_or_404(SavingsMovement, pk=pk, owner=request.user)
-    cancel_url = f"{reverse('savings-list')}?month={movement.occurred_on:%Y-%m}"
+    cancel_url = f"{reverse('savings-list')}?month={period_month(request.user, movement.occurred_on)}"
     if request.method == "POST":
         movement.delete()
         return redirect(cancel_url)

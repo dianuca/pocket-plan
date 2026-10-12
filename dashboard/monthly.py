@@ -3,22 +3,21 @@ from django.db.models import Sum
 from finances.models import Expense, Income, Installment
 from finances.savings import savings_evolution, savings_summary
 from finances.personal_budget import personal_budget_summary
-from .services import calculate_expenses, installment_amount_for_month, remaining_installments
+from .services import calculate_expenses
+from finances.periods import budget_period, installment_for_period, period_context
 
 
 def monthly_context(owner, selected_month):
-    year, month = map(int, selected_month.split("-"))
+    start, end = budget_period(owner, selected_month)
     income = Income.objects.filter(
         owner=owner,
-        received_on__year=year,
-        received_on__month=month,
+        received_on__range=(start, end),
     ).aggregate(total=Sum("amount"))["total"]
     if income is None:
         income = Decimal("0.00")
     monthly_expenses = Expense.objects.filter(
         owner=owner,
-        paid_on__year=year,
-        paid_on__month=month,
+        paid_on__range=(start, end),
     )
     expense_items = list(
         monthly_expenses
@@ -44,23 +43,9 @@ def monthly_context(owner, selected_month):
     ).order_by("name", "pk")
 
     for installment in installments:
-        first_month = installment.first_due_on.strftime("%Y-%m")
-
-        amount = installment_amount_for_month(
-            monthly_amount=installment.monthly_amount,
-            first_month=first_month,
-            number_of_installments=installment.number_of_installments,
-            selected_month=selected_month,
-        )
-
-        if amount == Decimal("0.00"):
+        amount, remaining = installment_for_period(installment, start, end)
+        if not amount:
             continue
-
-        remaining = remaining_installments(
-            first_month=first_month,
-            number_of_installments=installment.number_of_installments,
-            selected_month=selected_month,
-        )
 
         installment_items.append({
             "name": installment.name,
@@ -92,6 +77,7 @@ def monthly_context(owner, selected_month):
         "savings_evolution": savings_evolution(owner, selected_month),
         **savings,
         "selected_month": selected_month,
+        **period_context(owner, selected_month),
         "expense_items": expense_items,
         "installment_items": installment_items,
         "installment_total": installment_total,

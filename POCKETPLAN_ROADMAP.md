@@ -141,14 +141,18 @@ Acestea sunt idei, nu cerințe deja aprobate pentru implementare.
 
 Încasările planificate au fost retrase la cererea Dianei: lista, modalele, notificarea și modelul sunt eliminate. Migrațiile deja aplicate 0007/0008 sunt păstrate, iar migrația 0009 elimină tabelul planificărilor, fără să afecteze veniturile efective sau alte date financiare. Nu există calendar de încasări sau reportare automată. Verificare după retragere: `make test` — 127 de teste trecute, migrația 0009 aplicată, `manage.py check` fără probleme; aspectul în browser rămâne de verificat.
 
-### Idee salvată — lună de buget personalizată
+### Lună de buget personalizată — feature/custom-budget-month
 
-- [ ] Utilizatorul alege ziua din lună la care începe perioada sa de buget, de exemplu în funcție de ziua salariului.
-- [ ] Pentru ziua 5, perioada este 5 octombrie–4 noiembrie inclusiv; următoarea începe pe 5 noiembrie, fără suprapunere.
-- [ ] Stabilește regulile pentru zilele 29–31, etichetarea perioadelor și schimbarea zilei după existența datelor.
-- [ ] Adaptează împreună filtrele, veniturile, cheltuielile, ratele, economiile, bugetul personal și rapoartele, cu teste pentru limitele perioadelor.
+- [x] Utilizatorul alege ziua din lună la care începe perioada sa de buget, de exemplu în funcție de ziua salariului.
+- [x] Pentru ziua 5, perioada este 5 octombrie–4 noiembrie inclusiv; următoarea începe pe 5 noiembrie, fără suprapunere.
+- [x] Stabilește regulile pentru zilele 29–31, etichetarea perioadelor și schimbarea zilei după existența datelor.
+- [x] Adaptează împreună filtrele, veniturile, cheltuielile, ratele, economiile, bugetul personal și rapoartele, cu teste pentru limitele perioadelor.
 
-Propunere pentru un pas separat, încă neimplementată. Aplicația folosește în continuare lunile calendaristice. Această idee nu presupune reintroducerea calendarului de încasări planificate.
+Implementat: setarea „Luna mea” din antetul Rezumatului, salvată separat pentru fiecare utilizator și editată în modal. Anularea și Escape închid modalul; erorile păstrează valoarea introdusă și redeschid modalul. Implicit ziua 1 păstrează lunile calendaristice. Eticheta YYYY-MM reprezintă luna începerii; selectorul afișează forma „2026-Oct” și intervalul dedesubt, cu butonul aliniat la celelalte acțiuni. PDF-ul afișează intervalul explicit. Ziua inexistentă este redusă la ultima zi din lună. Schimbarea zilei recalculează afișarea istoricului fără modificarea datelor financiare; alocările personale rămân asociate etichetei lunii începerii. Nu există calendar de încasări sau reportare automată.
+
+Ratele și cheltuielile recurente sunt incluse după scadența lunară efectivă (redusă la ultima zi când este necesar). O perioadă poate conține două scadențe ale aceleiași reguli; totalul le include pe ambele. Numărul ratelor rămase este calculat înaintea primei scadențe din perioadă, fără confirmarea plății. Generările recurente păstrează identitatea regulă/lună calendaristică pentru a evita duplicatele după schimbarea setării.
+
+Verificări: `make test` — 150 de teste trecute, inclusiv 16 teste specifice pentru limite, an bisect, schimbarea anului, owner, autentificare/CSRF, validare, redirecționări, calcule comune, economii și grafic, PDF, perioade fără date, generări recurente repetate, etichetele selectorului și răspunsul de validare al modalului. Migrarea 0010 aplicată; `manage.py check` fără probleme, migrațiile sincronizate. Restant manual: setarea zilei 5 și revenirea la 1, selectorul și alinierea pe desktop/mobil, deschiderea/anularea/Escape/salvarea/erorile modalului „Luna mea”, adăugare/editare/anulare în celelalte modale și afișarea PDF-ului pentru o perioadă care trece în luna următoare. Verificarea vizuală nu a fost efectuată.
 
 - [ ] Obiective de economisire și progres.
 - [x] Cheltuieli recurente pentru chirie, utilități și abonamente; fără generări duplicate (generare manuală lunară, autorizată separat).
@@ -158,6 +162,8 @@ Propunere pentru un pas separat, încă neimplementată. Aplicația folosește �
 - [ ] Reportarea fondului personal nefolosit.
 
 Confirmare utilizatoare: funcționalitatea cheltuielilor recurente merge în browser. Verificarea completă pe mobil și a tuturor cazurilor de validare/anulare rămâne separată.
+
+Confirmare Diana pentru luna personalizată: aspectul selectorului mărit, turcoaz, cu eticheta „2026-Oct” și funcționarea modalului „Luna mea” au fost confirmate în browser. Verificarea pe mobil și celelalte cazuri manuale enumerate mai sus rămân distincte; verificarea vizuală nu a fost executată de agent.
 
 ## Reguli comune de date
 
