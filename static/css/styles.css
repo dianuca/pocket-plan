@@ -885,6 +885,10 @@ body:has(.edit-modal[open]) .app-content::before {
     margin-bottom: 24px;
 }
 
+.report-section {
+    margin-top: 24px;
+}
+
 .personal-budget-actions {
     margin-left: auto;
 }
