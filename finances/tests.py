@@ -563,7 +563,7 @@ class InstallmentPageTests(TestCase):
 
     def test_submission_saves_installment_for_logged_in_user(self):
         response = self.client.post(
-            "/finances/installments/",
+            "/finances/installments/?month=2026-10",
             data={
                 "name": "Laptop",
                 "monthly_amount": "200.00",
@@ -590,6 +590,39 @@ class InstallmentPageTests(TestCase):
             date(2026, 10, 15),
         )
         self.assertEqual(installment.number_of_installments, 3)
+
+    def test_creation_preserves_selected_month_and_existing_schedule(self):
+        existing = Installment.objects.create(
+            owner=self.user,
+            name="Laptop existent",
+            monthly_amount=Decimal("200.00"),
+            first_due_on=date(2026, 10, 15),
+            number_of_installments=3,
+        )
+
+        response = self.client.post(
+            "/finances/installments/?month=2026-11",
+            data={
+                "name": "Telefon nou",
+                "monthly_amount": "100.00",
+                "first_due_on": "2026-09-15",
+                "number_of_installments": "12",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, "/finances/installments/?month=2026-11")
+        self.assertEqual(response.context["selected_month"], "2026-11")
+        row = next(
+            row for row in response.context["installment_rows"]
+            if row["installment"].pk == existing.pk
+        )
+        self.assertEqual(row["amount_due"], Decimal("200.00"))
+        self.assertEqual(row["remaining"], 2)
+        existing.refresh_from_db()
+        self.assertEqual(existing.first_due_on, date(2026, 10, 15))
+        self.assertEqual(existing.number_of_installments, 3)
+        self.assertEqual(existing.monthly_amount, Decimal("200.00"))
 
     def test_anonymous_user_is_redirected_to_login(self):
         self.client.logout()

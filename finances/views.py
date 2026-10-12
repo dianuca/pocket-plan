@@ -247,9 +247,8 @@ def installment_list(request):
             installment.owner = request.user
             installment.save()
 
-            month = installment.first_due_on.strftime("%Y-%m")
             url = reverse("installment-list")
-            return redirect(f"{url}?month={month}")
+            return redirect(f"{url}?month={selected_month}")
     else:
         form = InstallmentForm(initial={
             "first_due_on": date.fromisoformat(f"{selected_month}-01"),
