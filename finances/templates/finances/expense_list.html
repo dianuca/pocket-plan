@@ -51,7 +51,7 @@
         <tbody>
             {% for expense in expenses %}
                 <tr>
-                    <td>{{ expense.name }}</td>
+                    <td>{{ expense.name }}{% if expense.from_personal_budget %}<small> · Buget pentru mine</small>{% endif %}</td>
                     <td>{{ expense.get_category_display }}</td>
                     <td>{{ expense.amount|floatformat:2 }} lei</td>
                     <td>{{ expense.paid_on|date:"d.m.Y" }}</td>

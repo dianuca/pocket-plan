@@ -42,6 +42,10 @@
                    class="{% if request.resolver_match.url_name == 'savings-list' or request.resolver_match.url_name == 'savings-history' %}active{% endif %}">
                     Economii
                 </a>
+                <a href="{% url 'personal-budget' %}"
+                   class="{% if request.resolver_match.url_name == 'personal-budget' %}active{% endif %}">
+                    Buget pentru mine
+                </a>
             </nav>
 
             <div class="sidebar-footer">

@@ -1,0 +1,16 @@
+{% if savings_evolution %}
+<div class="savings-evolution-scroll" tabindex="0" role="region" aria-label="Solduri lunare economii">
+    <ul class="savings-evolution-bars">
+        {% for point in savings_evolution %}
+        <li>
+            <div class="savings-evolution-value {% if point.balance < 0 %}savings-negative{% endif %}">{{ point.balance|floatformat:2 }} lei</div>
+            <div class="savings-evolution-plot" aria-hidden="true">
+                <div class="savings-evolution-half savings-evolution-positive">{% if point.balance > 0 %}<span style="height: {{ point.height }}%"></span>{% endif %}</div>
+                <div class="savings-evolution-half savings-evolution-negative">{% if point.balance < 0 %}<span style="height: {{ point.height }}%"></span>{% endif %}</div>
+            </div>
+            <span>{{ point.month }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}<p class="empty-state">Nu există solduri pentru perioada selectată. Configurează economiile sau selectează o lună de la începutul monitorizării.</p>{% endif %}

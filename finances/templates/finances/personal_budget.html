@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Buget pentru mine | PocketPlan{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div><h1>Buget pentru mine</h1><p>Alege cât rezervi lunar pentru cumpărăturile și cheltuielile tale personale.</p></div>
+    <div class="savings-actions personal-budget-actions">
+        <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-haspopup="dialog">Modifică alocarea</button>
+        {% include "includes/month_picker.html" %}
+    </div>
+</div>
+<section class="summary-cards" aria-label="Bugetul pentru mine al lunii">
+    <article class="summary-card"><p>Buget alocat</p><strong>{{ personal_allocated|floatformat:2 }} lei</strong><span>Suma pe care ai rezervat-o pentru tine</span></article>
+    <article class="summary-card"><p>Cheltuit pentru mine</p><strong>{{ personal_spent|floatformat:2 }} lei</strong><span>Cumpărăturile marcate „Pentru mine”</span></article>
+    <article class="summary-card"><p>Mai pot cheltui</p><strong {% if personal_remaining < 0 %}class="savings-negative"{% endif %}>{{ personal_remaining|floatformat:2 }} lei</strong><span>Buget alocat minus cheltuielile personale</span></article>
+</section>
+{% if personal_overspent %}<div class="savings-deficit" role="note"><strong>Buget personal depășit cu {{ personal_overspent|floatformat:2 }} lei</strong><p>Cheltuielile personale sunt permise și peste suma alocată.</p></div>{% endif %}
+<dialog id="entry-panel" class="edit-modal" data-has-errors="{{ form.errors|yesno:'true,false' }}" aria-labelledby="entry-modal-title">
+    <h2 id="entry-modal-title">Alocare pentru {{ selected_month }}</h2>
+    <form method="post">{% csrf_token %}{{ form.as_p }}
+        <div class="modal-actions"><button type="button" data-close-entry data-close-modal>Anulează</button><button type="submit">Salvează alocarea</button></div>
+    </form>
+</dialog>
+{% include "finances/includes/entry_toggle.html" %}
+<section class="panel">
+    <div class="panel-heading"><h2>Cumpărături pentru mine</h2><a href="{% url 'expense-list' %}?month={{ selected_month }}">Gestionează cheltuielile</a></div>
+    <p>La adăugarea sau editarea unei cheltuieli, bifează „Pentru mine”.</p>
+    <ul class="financial-list" tabindex="0" aria-label="Cheltuielile personale ale lunii">
+        {% for expense in personal_expenses %}<li><div><span>{{ expense.name }}</span><small>{{ expense.paid_on|date:"d.m.Y" }} · {{ expense.get_category_display }}</small></div><strong>{{ expense.amount|floatformat:2 }} lei</strong></li>
+        {% empty %}<li class="empty-state">Nu există cheltuieli personale în această lună.</li>{% endfor %}
+    </ul>
+</section>
+{% endblock %}

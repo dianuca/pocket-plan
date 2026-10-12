@@ -31,13 +31,14 @@ class IncomeForm(forms.ModelForm):
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
-        fields = ["name", "category", "amount", "paid_on"]
+        fields = ["name", "category", "amount", "paid_on", "from_personal_budget"]
 
         labels = {
             "name": "Numele cheltuielii",
             "category": "Categorie",
             "amount": "Sumă",
             "paid_on": "Data plății",
+            "from_personal_budget": "Pentru mine",
         }
 
         widgets = {
