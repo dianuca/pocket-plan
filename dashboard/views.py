@@ -35,15 +35,27 @@ def monthly_summary(request):
     ).aggregate(total=Sum("amount"))["total"]
     if income is None:
         income = Decimal("0.00")
+    monthly_expenses = Expense.objects.filter(
+        owner=request.user,
+        paid_on__year=year,
+        paid_on__month=month,
+    )
     expense_items = list(
-        Expense.objects.filter(
-            owner=request.user,
-            paid_on__year=year,
-            paid_on__month=month,
-        )
+        monthly_expenses
         .order_by("-paid_on", "-pk")
         .values("name", "amount")
     )
+    category_labels = dict(Expense.Category.choices)
+    expenses_by_category = [
+        {
+            "category": row["category"],
+            "label": category_labels[row["category"]],
+            "amount": row["total"],
+        }
+        for row in monthly_expenses.values("category")
+        .annotate(total=Sum("amount"))
+        .order_by("category")
+    ]
     installment_items = []
     installment_total = Decimal("0.00")
 
@@ -77,6 +89,13 @@ def monthly_summary(request):
         })
         installment_total += amount
 
+    if installment_total > Decimal("0.00"):
+        expenses_by_category.append({
+            "category": "installments",
+            "label": "Rate",
+            "amount": installment_total,
+        })
+
     expenses = calculate_expenses(expense_items) + installment_total
 
     context = {
@@ -87,6 +106,8 @@ def monthly_summary(request):
         "expense_items": expense_items,
         "installment_items": installment_items,
         "installment_total": installment_total,
+        "expenses_by_category": expenses_by_category,
+        "comparison_max": max(income, expenses),
     }
     return render(request, "dashboard/summary.html", context)
 

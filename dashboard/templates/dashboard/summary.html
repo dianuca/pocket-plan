@@ -39,6 +39,57 @@
         </article>
     </section>
 
+    <div class="dashboard-panels budget-charts">
+        <section class="panel" aria-labelledby="category-chart-title">
+            <h2 id="category-chart-title">Distribuția cheltuielilor</h2>
+            <p>Din totalul cheltuielilor lunii, inclusiv ratele active.</p>
+            <ul class="budget-chart" tabindex="0" aria-label="Cheltuieli pe categorii">
+                {% for item in expenses_by_category %}
+                    <li>
+                        <div class="chart-label">
+                            <span>{{ item.label }}</span>
+                            <strong>{{ item.amount|floatformat:2 }} lei</strong>
+                        </div>
+                        <div class="chart-track" aria-hidden="true">
+                            <div class="chart-bar" style="width: {% widthratio item.amount expenses 100 %}%"></div>
+                        </div>
+                        <small>{% widthratio item.amount expenses 100 %}% din cheltuieli</small>
+                    </li>
+                {% empty %}
+                    <li class="empty-state">Nu există cheltuieli de reprezentat în această lună.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="panel" aria-labelledby="comparison-chart-title">
+            <h2 id="comparison-chart-title">Venituri și cheltuieli</h2>
+            {% if comparison_max %}
+                <ul class="budget-chart" tabindex="0" aria-label="Comparație venituri și cheltuieli">
+                    <li>
+                        <div class="chart-label">
+                            <span>Venituri</span>
+                            <strong>{{ income|floatformat:2 }} lei</strong>
+                        </div>
+                        <div class="chart-track" aria-hidden="true">
+                            <div class="chart-bar chart-bar-income" style="width: {% widthratio income comparison_max 100 %}%"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="chart-label">
+                            <span>Cheltuieli, inclusiv rate</span>
+                            <strong>{{ expenses|floatformat:2 }} lei</strong>
+                        </div>
+                        <div class="chart-track" aria-hidden="true">
+                            <div class="chart-bar" style="width: {% widthratio expenses comparison_max 100 %}%"></div>
+                        </div>
+                    </li>
+                </ul>
+            {% else %}
+                <p class="empty-state">Nu există venituri sau cheltuieli în această lună.</p>
+            {% endif %}
+        </section>
+    </div>
+
     <div class="dashboard-panels">
         <section class="panel">
             <div class="panel-heading">
@@ -48,7 +99,7 @@
                 </a>
             </div>
 
-            <ul class="financial-list">
+            <ul class="financial-list" tabindex="0" aria-label="Lista cheltuielilor lunii">
                 {% for item in expense_items %}
                     <li>
                         <span>{{ item.name }}</span>
@@ -70,7 +121,7 @@
                 </a>
             </div>
 
-            <ul class="financial-list">
+            <ul class="financial-list" tabindex="0" aria-label="Lista ratelor lunii">
                 {% for item in installment_items %}
                     <li>
                         <div>
