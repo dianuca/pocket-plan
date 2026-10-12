@@ -1,9 +1,13 @@
 from django.urls import path
 
 from . import views
+from .recurring import recurring_generate, recurring_list
 from .savings import savings_account_edit, savings_delete, savings_edit, savings_history, savings_list
 
 urlpatterns = [
+    path("expenses/recurring/", recurring_list, name="recurring-list"),
+    path("expenses/recurring/<int:pk>/edit/", recurring_list, name="recurring-edit"),
+    path("expenses/recurring/generate/", recurring_generate, name="recurring-generate"),
     path("savings/", savings_list, name="savings-list"),
     path("savings/history/", savings_history, name="savings-history"),
     path("savings/initial/edit/", savings_account_edit, name="savings-account-edit"),

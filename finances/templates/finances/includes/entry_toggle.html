@@ -2,10 +2,13 @@
 (() => {
     const button = document.getElementById("open-entry-form");
     const panel = document.getElementById("entry-panel");
-    button.addEventListener("click", () => {
-        panel.hidden = !panel.hidden;
-        button.setAttribute("aria-expanded", String(!panel.hidden));
-        if (!panel.hidden) panel.querySelector('input:not([type="hidden"]), select')?.focus();
-    });
+    function openModal() {
+        panel.showModal();
+        (panel.querySelector('[aria-invalid="true"]') || panel.querySelector('input:not([type="hidden"]), select'))?.focus();
+    }
+    button.addEventListener("click", openModal);
+    panel.querySelector("[data-close-entry]").addEventListener("click", () => panel.close());
+    panel.addEventListener("close", () => button.focus());
+    if (panel.dataset.hasErrors === "true") openModal();
 })();
 </script>

@@ -10,19 +10,20 @@
         </div>
 
         <div class="savings-actions">
-            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-expanded="{{ form.errors|yesno:'true,false' }}">+ Adaugă un venit</button>
+            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-haspopup="dialog">+ Adaugă un venit</button>
             {% include "includes/month_picker.html" %}
         </div>
     </div>
 
-    <section id="entry-panel" class="entry-panel" {% if not form.errors %}hidden{% endif %} aria-label="Adaugă un venit">
+    <dialog id="entry-panel" class="edit-modal" data-has-errors="{{ form.errors|yesno:'true,false' }}" aria-labelledby="entry-modal-title">
+        <h2 id="entry-modal-title">Adaugă un venit</h2>
 
-        <form method="post" class="entry-form">
+        <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Salvează</button>
+            <div class="modal-actions"><button type="button" data-close-entry data-close-modal>Anulează</button><button type="submit">Salvează</button></div>
         </form>
-    </section>
+    </dialog>
     {% include "finances/includes/entry_toggle.html" %}
 
     <h2>Veniturile lunii</h2>

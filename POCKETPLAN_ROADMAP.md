@@ -127,13 +127,17 @@ Verificare automată: 101 teste trecute, dintre care 23 pentru economii și 7 pe
 Acestea sunt idei, nu cerințe deja aprobate pentru implementare.
 
 - [ ] Obiective de economisire și progres.
-- [ ] Cheltuieli recurente pentru chirie, utilități și abonamente; fără generări duplicate.
+- [x] Cheltuieli recurente pentru chirie, utilități și abonamente; fără generări duplicate (generare manuală lunară, autorizată separat).
 - [ ] Categorii personalizate.
 - [ ] Bugete pe categorii și indicator de depășire.
 - [ ] Evoluția economiilor și comparații între luni.
 - [ ] Reportarea fondului personal nefolosit.
 
+Confirmare utilizatoare: funcționalitatea cheltuielilor recurente merge în browser. Verificarea completă pe mobil și a tuturor cazurilor de validare/anulare rămâne separată.
+
 ## Reguli comune de date
+
+Cheltuieli recurente — `feature/recurring-expenses`: reguli cu nume, categorie, sumă, zi (1–31), lună de început și stare activă. Adăugare/editare în modal, dezactivare prin editarea regulii. Pagina Cheltuieli arată ce lipsește în luna selectată; generarea se face doar prin POST, la apăsarea butonului. Zilele inexistente se reduc la ultima zi a lunii. Evidența unică regulă/lună previne duplicatele inclusiv după editarea, mutarea sau ștergerea cheltuielii generate. Modificările regulii nu rescriu cheltuielile existente. 10 teste noi; `make test`: 118 teste trecute. Migrarea adăugată și aplicată. Restant: verificare vizuală desktop/mobil, modal cu erori/anulare/salvare și generare repetată din browser. Fără commit/push/merge.
 
 - Sume calculate cu Decimal; valori financiare valide și monedă inițială lei.
 - Fiecare lookup și agregare trebuie limitate la utilizatorul autentificat.

@@ -10,22 +10,33 @@
         </div>
 
         <div class="savings-actions">
-            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-expanded="{{ form.errors|yesno:'true,false' }}">+ Adaugă o cheltuială</button>
+            <a href="{% url 'recurring-list' %}" class="savings-secondary-action">Cheltuieli recurente</a>
+            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-haspopup="dialog">+ Adaugă o cheltuială</button>
             {% include "includes/month_picker.html" %}
         </div>
     </div>
 
-    <section id="entry-panel" class="entry-panel" {% if not form.errors %}hidden{% endif %} aria-label="Adaugă o cheltuială">
+    <dialog id="entry-panel" class="edit-modal" data-has-errors="{{ form.errors|yesno:'true,false' }}" aria-labelledby="entry-modal-title">
+        <h2 id="entry-modal-title">Adaugă o cheltuială</h2>
 
-        <form method="post" class="entry-form">
+        <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Salvează cheltuiala</button>
+            <div class="modal-actions"><button type="button" data-close-entry data-close-modal>Anulează</button><button type="submit">Salvează cheltuiala</button></div>
         </form>
-    </section>
+    </dialog>
     {% include "finances/includes/entry_toggle.html" %}
 
     <h2>Cheltuielile lunii</h2>
+    {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
+    {% if pending_recurring %}
+    <details class="entry-panel">
+        <summary>De generat: {{ pending_recurring|length }} cheltuieli recurente</summary>
+        <ul>{% for row in pending_recurring %}<li>{{ row.rule.name }} · {{ row.rule.amount|floatformat:2 }} lei · {{ row.paid_on|date:"d.m.Y" }}</li>{% endfor %}</ul>
+        <p>Aceste sume nu intră în totaluri până la generare.</p>
+        <form method="post" action="{% url 'recurring-generate' %}">{% csrf_token %}<input type="hidden" name="month" value="{{ selected_month }}"><button type="submit">Generează cheltuielile lunii</button></form>
+    </details>
+    {% endif %}
 
     <table>
         <thead>
