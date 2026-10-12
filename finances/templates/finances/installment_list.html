@@ -10,19 +10,20 @@
         </div>
 
         <div class="savings-actions">
-            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-expanded="{{ form.errors|yesno:'true,false' }}">+ Adaugă o rată</button>
+            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-haspopup="dialog">+ Adaugă o rată</button>
             {% include "includes/month_picker.html" %}
         </div>
     </div>
 
-    <section id="entry-panel" class="entry-panel" {% if not form.errors %}hidden{% endif %} aria-label="Adaugă o rată">
+    <dialog id="entry-panel" class="edit-modal" data-has-errors="{{ form.errors|yesno:'true,false' }}" aria-labelledby="entry-modal-title">
+        <h2 id="entry-modal-title">Adaugă o rată</h2>
 
-        <form method="post" class="entry-form">
+        <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Salvează rata</button>
+            <div class="modal-actions"><button type="button" data-close-entry data-close-modal>Anulează</button><button type="submit">Salvează rata</button></div>
         </form>
-    </section>
+    </dialog>
     {% include "finances/includes/entry_toggle.html" %}
 
     <h2>Ratele tale</h2>
