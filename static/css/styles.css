@@ -392,6 +392,31 @@ td a {
     gap: 16px;
 }
 
+.dashboard-panels > .panel {
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-panels > .panel > :not(ul) {
+    flex-shrink: 0;
+}
+
+.dashboard-panels .financial-list,
+.dashboard-panels .budget-chart {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding-right: 8px;
+}
+
+.dashboard-panels ul:focus-visible {
+    outline: 2px solid #7354c8;
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
 .panel-heading h2 {
     margin: 0;
 }
@@ -599,6 +624,49 @@ body:has(.edit-modal[open]) .app-content::before {
         grid-template-columns: 1fr;
     }
 }
+.budget-charts {
+    margin-bottom: 24px;
+}
+
+.budget-charts .panel {
+    min-width: 0;
+}
+
+.budget-chart {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+    display: grid;
+    gap: 20px;
+    align-content: start;
+}
+
+.chart-label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 8px;
+    overflow-wrap: anywhere;
+}
+
+.chart-track {
+    height: 14px;
+    border-radius: 8px;
+    background: #edeaf5;
+    overflow: hidden;
+}
+
+.chart-bar {
+    height: 100%;
+    background: #7354c8;
+    border-radius: inherit;
+}
+
+.chart-bar-income {
+    background: #227a62;
+}
+
 /* Ecrane mici */
 
 @media (max-width: 800px) {
