@@ -1,0 +1,25 @@
+<div class="page-heading"><div><h2 id="history-modal-title">Istoric economii</h2></div>
+<a href="{% url 'savings-list' %}" data-close-history>Închide istoricul</a></div>
+<form method="get" action="{% url 'savings-history' %}" class="entry-form">
+    {{ filter_form.as_p }}
+    <div class="savings-actions"><button type="submit" class="compact-button">Filtrează</button><a href="{% url 'savings-history' %}">Resetează filtrele</a></div>
+</form>
+{% if not filter_form.errors %}
+<div class="history-table-scroll" tabindex="0" role="region" aria-label="Transferuri economii">
+<table>
+    <thead><tr><th>Data</th><th>Tip</th><th>Descriere</th><th>Sumă</th><th>Sold după transfer</th><th>Acțiuni</th></tr></thead>
+    <tbody>{% for row in page_obj %}
+        <tr><td>{{ row.movement.occurred_on|date:"d.m.Y" }}</td><td>{{ row.movement.get_kind_display }}</td><td>{{ row.movement.description }}</td>
+            <td>{{ row.movement.amount|floatformat:2 }} lei</td><td {% if row.balance < 0 %}class="savings-negative"{% endif %}>{{ row.balance|floatformat:2 }} lei</td>
+            <td><a href="{% url 'savings-edit' row.movement.pk %}">Editează</a> <a href="{% url 'savings-delete' row.movement.pk %}">Șterge</a></td></tr>
+    {% empty %}<tr><td colspan="6">Nu există transferuri pentru filtrele selectate.</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pagini istoric economii" class="savings-actions">
+    {% if page_obj.has_previous %}<a href="?{{ filter_query }}&amp;page={{ page_obj.previous_page_number }}">Pagina anterioară</a>{% endif %}
+    <span>Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?{{ filter_query }}&amp;page={{ page_obj.next_page_number }}">Pagina următoare</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}

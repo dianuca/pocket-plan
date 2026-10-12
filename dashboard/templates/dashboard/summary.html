@@ -31,13 +31,24 @@
             <strong>{{ balance|floatformat:2 }} lei</strong>
             <span>
                 {% if balance < 0 %}
-                    Cheltuielile depășesc veniturile
+                    Disponibil negativ după cheltuieli și transferuri
                 {% else %}
-                    Disponibil după cheltuieli
+                    Disponibil după cheltuieli și transferuri în economii
                 {% endif %}
             </span>
         </article>
     </section>
+
+    <p>Economii: depuneri {{ savings_deposits|floatformat:2 }} lei · retrageri {{ savings_withdrawals|floatformat:2 }} lei.
+        Sold acumulat la sfârșitul lunii: <strong {% if savings_balance < 0 %}class="savings-negative"{% endif %}>{{ savings_balance|floatformat:2 }} lei</strong>.
+        <a href="{% url 'savings-list' %}?month={{ selected_month }}">Vezi economiile</a>
+    </p>
+    {% if savings_deficit %}
+    <div class="savings-deficit" role="note">
+        <strong>Economii pe minus · De acoperit: {{ savings_deficit|floatformat:2 }} lei</strong>
+        <p>Suma necesară pentru revenirea la zero, la sfârșitul lunii selectate. <a href="{% url 'savings-list' %}?month={{ selected_month }}">Gestionează economiile</a></p>
+    </div>
+    {% endif %}
 
     <div class="dashboard-panels budget-charts">
         <section class="panel" aria-labelledby="category-chart-title">

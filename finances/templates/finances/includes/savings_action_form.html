@@ -1,0 +1,16 @@
+<h2 id="savings-action-title">{% if editing_account %}Corectează soldul inițial{% elif deleting %}Șterge transferul{% else %}Editează transferul{% endif %}</h2>
+{% if deleting %}
+<p>Sigur vrei să ștergi {{ movement.get_kind_display|lower }} de <strong>{{ movement.amount|floatformat:2 }} lei</strong> din {{ movement.occurred_on|date:"d.m.Y" }}?</p>
+<p>{{ movement.description }}</p>
+{% endif %}
+{% if editing_account %}
+<p>Modificarea recalculează soldurile economiilor începând cu data inițială. Disponibilul lunar rămâne neschimbat; acesta depinde de transferuri.</p>
+{% else %}<p>Soldul economiilor și disponibilul lunii afectate se vor recalcula.</p>{% endif %}
+<form method="post" action="{% if editing_account %}{% url 'savings-account-edit' %}{% elif deleting %}{% url 'savings-delete' movement.pk %}{% else %}{% url 'savings-edit' movement.pk %}{% endif %}">
+    {% csrf_token %}
+    {% if not deleting %}{{ form.as_p }}{% endif %}
+    <div class="modal-actions">
+        <a href="{{ cancel_url }}" data-cancel-savings>Anulează</a>
+        <button type="submit" {% if deleting %}class="danger-button"{% endif %}>{% if deleting %}Confirmă ștergerea{% else %}Salvează{% endif %}</button>
+    </div>
+</form>

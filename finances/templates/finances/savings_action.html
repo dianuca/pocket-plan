@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Transfer economii | PocketPlan{% endblock %}
+{% block content %}
+<dialog id="savings-action-modal" class="edit-modal" aria-labelledby="savings-action-title">
+    {% include "finances/includes/savings_action_form.html" %}
+</dialog>
+<noscript><p>Activează JavaScript pentru a deschide formularul. <a href="{{ cancel_url }}">Înapoi la economii</a></p></noscript>
+<script>
+(() => {
+    const modal = document.getElementById("savings-action-modal");
+    modal.showModal();
+    modal.querySelector('[aria-invalid="true"]')?.focus();
+    modal.addEventListener("cancel", event => {
+        event.preventDefault();
+        window.location.href = "{{ cancel_url|escapejs }}";
+    });
+})();
+</script>
+{% endblock %}

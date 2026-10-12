@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Economii | PocketPlan{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div><h1>Economii</h1><p>Depuneri și retrageri introduse manual, cu data transferului.</p></div>
+    <div class="savings-actions">
+        <button type="button" id="open-savings-modal" class="compact-button" aria-haspopup="dialog" aria-controls="savings-modal">
+            {% if account %}+ Adaugă un transfer{% else %}+ Sold inițial{% endif %}
+        </button>
+        {% include "includes/month_picker.html" %}
+    </div>
+</div>
+{% if account %}
+<div class="savings-opening">
+    <p>Sold inițial: <strong>{{ account.opening_balance|floatformat:2 }} lei</strong> <span>· {{ account.started_on|date:"d.m.Y" }}</span></p>
+    <a href="{% url 'savings-account-edit' %}" class="savings-action-link savings-secondary-action">Corectează soldul inițial</a>
+</div>
+<section class="summary-cards" aria-label="Rezumat economii">
+    <article class="summary-card"><p>Sold la sfârșitul lunii selectate</p><strong {% if savings_balance < 0 %}class="savings-negative"{% endif %}>{{ savings_balance|floatformat:2 }} lei</strong></article>
+    <article class="summary-card"><p>Depuneri în lună</p><strong>{{ savings_deposits|floatformat:2 }} lei</strong></article>
+    <article class="summary-card"><p>Retrageri în lună</p><strong>{{ savings_withdrawals|floatformat:2 }} lei</strong></article>
+</section>
+
+{% if savings_deficit %}
+<div class="savings-deficit" role="note">
+    <strong>De acoperit: {{ savings_deficit|floatformat:2 }} lei</strong>
+    <p>Acesta este deficitul economiilor la sfârșitul lunii selectate. Adaugă această sumă pentru a reveni la zero; depunerile peste ea duc soldul pe plus.</p>
+</div>
+{% endif %}
+{% endif %}
+<dialog id="savings-modal" class="edit-modal" aria-labelledby="savings-modal-title" data-has-errors="{{ form.errors|yesno:'true,false' }}">
+    <h2 id="savings-modal-title">{% if account %}Adaugă un transfer{% else %}Configurează soldul inițial{% endif %}</h2>
+    <form method="post" id="savings-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="modal-actions">
+            <button type="button" id="close-savings-modal" data-close-modal>Anulează</button>
+            <button type="submit">Salvează</button>
+        </div>
+    </form>
+</dialog>
+<noscript><p>Pentru a deschide formularul de economii, activează JavaScript în browser.</p></noscript>
+<p>Depunerile reduc disponibilul lunii, iar retragerile îl cresc. Veniturile și cheltuielile rămân separate.</p>
+<div class="savings-history-heading">
+    <div><h2>Transferurile lunii</h2><p>{{ selected_month }}</p></div>
+    <a href="{% url 'savings-history' %}" id="open-history-modal" class="savings-secondary-action" aria-haspopup="dialog" aria-controls="history-modal">Istoric complet</a>
+</div>
+<table>
+    <thead><tr><th>Data</th><th>Tip</th><th>Descriere</th><th>Sumă</th><th>Acțiuni</th></tr></thead>
+    <tbody>{% for movement in movements %}
+        <tr><td>{{ movement.occurred_on|date:"d.m.Y" }}</td><td>{{ movement.get_kind_display }}</td><td>{{ movement.description }}</td><td>{{ movement.amount|floatformat:2 }} lei</td>
+            <td><a href="{% url 'savings-edit' movement.pk %}" class="savings-action-link">Editează</a>
+                <a href="{% url 'savings-delete' movement.pk %}" class="savings-action-link">Șterge</a></td></tr>
+    {% empty %}<tr><td colspan="5">Nu există transferuri în această lună.</td></tr>{% endfor %}</tbody>
+</table>
+{% if account %}
+<section class="panel savings-evolution" aria-labelledby="savings-evolution-title">
+    <h2 id="savings-evolution-title">Evoluția economiilor</h2>
+    <p>Sold la sfârșitul lunii · până la 12 luni, inclusiv luna selectată.</p>
+    {% if savings_evolution %}
+    <div class="savings-evolution-scroll" tabindex="0" role="region" aria-label="Solduri lunare economii">
+        <ul class="savings-evolution-bars">
+            {% for point in savings_evolution %}
+            <li>
+                <div class="savings-evolution-value {% if point.balance < 0 %}savings-negative{% endif %}">{{ point.balance|floatformat:2 }} lei</div>
+                <div class="savings-evolution-plot" aria-hidden="true">
+                    <div class="savings-evolution-half savings-evolution-positive">{% if point.balance > 0 %}<span style="height: {{ point.height }}%"></span>{% endif %}</div>
+                    <div class="savings-evolution-half savings-evolution-negative">{% if point.balance < 0 %}<span style="height: {{ point.height }}%"></span>{% endif %}</div>
+                </div>
+                <span>{{ point.month }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}<p>Nu există solduri pentru perioada selectată. Economiile încep la {{ account.started_on|date:"d.m.Y" }}.</p>{% endif %}
+</section>
+{% endif %}
+<dialog id="savings-action-modal" class="edit-modal" aria-labelledby="savings-action-title"></dialog>
+<dialog id="history-modal" class="edit-modal history-modal" aria-labelledby="history-modal-title"></dialog>
+<script>
+(() => {
+    const modal = document.getElementById("savings-modal");
+    const openButton = document.getElementById("open-savings-modal");
+    const closeButton = document.getElementById("close-savings-modal");
+    const form = document.getElementById("savings-form");
+
+    function openModal() {
+        modal.showModal();
+        const invalidField = form.querySelector('[aria-invalid="true"]');
+        const firstField = form.querySelector('input:not([type="hidden"]), select, textarea');
+        (invalidField || firstField)?.focus();
+    }
+
+    openButton.addEventListener("click", openModal);
+    closeButton.addEventListener("click", () => modal.close());
+    modal.addEventListener("close", () => openButton.focus());
+    if (modal.dataset.hasErrors === "true") {
+        openModal();
+    }
+
+    const actionModal = document.getElementById("savings-action-modal");
+    const historyModal = document.getElementById("history-modal");
+    const historyLink = document.getElementById("open-history-modal");
+    async function loadHistory(url) {
+        try {
+            const response = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
+            if (response.redirected) { window.location.href = response.url; return; }
+            if (!response.ok) throw new Error("Încărcare eșuată");
+            historyModal.innerHTML = await response.text();
+            if (!historyModal.open) historyModal.showModal();
+            historyModal.querySelector("[data-close-history]")?.focus();
+        } catch (error) { alert("Istoricul nu a putut fi încărcat. Încearcă din nou."); }
+    }
+    historyLink.addEventListener("click", event => {
+        event.preventDefault();
+        loadHistory(historyLink.href);
+    });
+    historyModal.addEventListener("click", event => {
+        const link = event.target.closest("a");
+        if (!link) return;
+        if (link.hasAttribute("data-close-history")) {
+            event.preventDefault(); historyModal.close(); return;
+        }
+        const url = new URL(link.getAttribute("href"), historyLink.href);
+        if (url.pathname === new URL(historyLink.href).pathname) {
+            event.preventDefault(); loadHistory(url);
+        }
+    });
+    historyModal.addEventListener("submit", event => {
+        event.preventDefault();
+        const url = new URL(historyLink.href);
+        url.search = new URLSearchParams(new FormData(event.target)).toString();
+        loadHistory(url);
+    });
+    historyModal.addEventListener("close", () => {
+        historyModal.replaceChildren(); historyLink.focus();
+    });
+    let actionLink;
+    document.querySelectorAll(".savings-action-link").forEach(link => {
+        link.addEventListener("click", async event => {
+            event.preventDefault();
+            try {
+                const response = await fetch(link.href, {
+                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                });
+                if (!response.ok || response.redirected) {
+                    window.location.href = response.redirected ? response.url : link.href;
+                    return;
+                }
+                actionModal.innerHTML = await response.text();
+                actionLink = link;
+                actionModal.showModal();
+            } catch (error) {
+                window.location.href = link.href;
+            }
+        });
+    });
+    actionModal.addEventListener("click", event => {
+        if (event.target.closest("[data-cancel-savings]")) {
+            event.preventDefault();
+            actionModal.close();
+        }
+    });
+    actionModal.addEventListener("close", () => {
+        actionModal.replaceChildren();
+        actionLink?.focus();
+    });
+})();
+</script>
+{% endblock %}

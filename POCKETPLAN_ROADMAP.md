@@ -69,15 +69,23 @@ Verificare automată: `make test` — 74 de teste trecute, inclusiv comanda `see
 
 ## 3. Economii — feature/savings
 
-- [ ] Definește soldul inițial și data de început a monitorizării.
-- [ ] Înregistrează depuneri și retrageri: sumă, dată, descriere și proprietar.
-- [ ] Sold la o dată = sold inițial + depuneri până atunci − retrageri până atunci.
-- [ ] Afișează depuneri/retrageri lunare, sold acumulat și istoric.
-- [ ] Clarifică dacă o retragere finanțează bugetul lunar sau rămâne doar o mișcare în economii.
-- [ ] Nu transforma automat banii rămași în economii; înregistrează explicit transferul.
-- [ ] Evită numărarea transferurilor interne ca venit sau cheltuială de consum.
-- [ ] Validează sume, date și politica pentru retrageri peste sold.
-- [ ] Teste pentru calcule istorice, modificări, izolare și validare.
+- [x] Definește soldul inițial și data de început a monitorizării.
+- [x] Înregistrează depuneri și retrageri: sumă, dată, descriere și proprietar.
+- [x] Sold la o dată = sold inițial + depuneri până atunci − retrageri până atunci (afișat la sfârșitul lunii selectate).
+- [x] Afișează depuneri/retrageri lunare, sold acumulat și istoric filtrat pe lună.
+- [x] Retragerea finanțează disponibilul lunar; depunerea îl reduce, în luna transferului.
+- [x] Nu transforma automat banii rămași în economii; înregistrează explicit transferul.
+- [x] Evită numărarea transferurilor interne ca venit sau cheltuială de consum.
+- [x] Validează sume, date și politica pentru retrageri peste sold: sunt permise; afișează deficitul necesar revenirii la zero.
+- [x] Teste pentru calcule istorice, modificări, izolare și validare.
+
+Implementat: sold inițial cu dată și corectare, depuneri/retrageri cu editare și ștergere, istoric lunar și complet în overlay cu filtre și paginare, sold după fiecare transfer, deficit evidențiat și grafic pe până la 12 luni la finalul paginii.
+
+Reguli: disponibil lunar = venituri − cheltuieli − depuneri + retrageri. Soldul inițial poate fi negativ și nu afectează disponibilul lunar. Transferurile nu pot preceda începutul monitorizării; data inițială nu poate fi mutată după primul transfer. Filtrele istoricului nu schimbă soldurile calculate. Nu există plan automat de recuperare a deficitului pe luni.
+
+Date demo: `python manage.py seed_demo --month 2027-09 --savings --months 12`. Pentru contul pocketplan_demo, adaugă transferuri fără suprascrierea soldului inițial existent; omite datele anterioare începutului monitorizării. Rulările identice nu dublează datele.
+
+Verificare automată: 101 teste trecute, dintre care 23 pentru economii și 7 pentru seed. Graficul și aranjarea butoanelor au fost confirmate de Diana în browser. Rămâne verificarea manuală completă pe mobil și a modalelor: anulare, Escape, validare, salvare, confirmarea ștergerii, filtrare și paginare în overlay. Etapa este implementată funcțional; verificările manuale restante nu sunt declarate terminate.
 
 ## 4. Fond personal lunar — feature/personal-budget
 

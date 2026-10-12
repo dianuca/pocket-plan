@@ -38,6 +38,10 @@
                    class="{% if request.resolver_match.url_name == 'installment-list' or request.resolver_match.url_name == 'installment-edit' or request.resolver_match.url_name == 'installment-delete' %}active{% endif %}">
                     Rate
                 </a>
+                <a href="{% url 'savings-list' %}"
+                   class="{% if request.resolver_match.url_name == 'savings-list' or request.resolver_match.url_name == 'savings-history' %}active{% endif %}">
+                    Economii
+                </a>
             </nav>
 
             <div class="sidebar-footer">
