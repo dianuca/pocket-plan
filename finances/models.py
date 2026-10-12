@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from decimal import Decimal
 
 
@@ -67,6 +67,25 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.amount}"
+
+class RecurringExpense(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=20, choices=Expense.Category.choices)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))])
+    payment_day = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(31)])
+    starts_on = models.DateField()
+    active = models.BooleanField(default=True)
+
+
+class RecurringExpenseOccurrence(models.Model):
+    rule = models.ForeignKey(RecurringExpense, on_delete=models.CASCADE)
+    month = models.DateField()
+    expense = models.OneToOneField(Expense, null=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["rule", "month"], name="unique_recurring_expense_month")]
+
 
 class Installment(models.Model):
     owner = models.ForeignKey(

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Cheltuieli recurente | PocketPlan{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>Cheltuieli recurente</h1><p>Reguli lunare pentru generare manuală, fără duplicate.</p></div>
+<div class="savings-actions"><button type="button" class="compact-button" id="open-recurring">+ Adaugă o regulă</button><a href="{% url 'expense-list' %}">Înapoi la cheltuieli</a></div></div>
+<p>Modificările se aplică doar generărilor viitoare. Pentru zilele 29–31 se folosește ultima zi disponibilă a lunii. Dezactivează o regulă pentru a opri generările.</p>
+<p>O cheltuială deja generată nu se generează din nou pentru aceeași lună, chiar dacă o editezi, o muți sau o ștergi. Dacă ai șters-o din greșeală, o poți adăuga manual.</p>
+<table><thead><tr><th>Nume</th><th>Categorie</th><th>Sumă</th><th>Zi</th><th>Început</th><th>Stare</th><th>Acțiuni</th></tr></thead>
+<tbody>{% for rule in rules %}<tr><td>{{ rule.name }}</td><td>{{ rule.get_category_display }}</td><td>{{ rule.amount|floatformat:2 }} lei</td><td>{{ rule.payment_day }}</td><td>{{ rule.starts_on|date:"Y-m" }}</td><td>{{ rule.active|yesno:"Activă,Inactivă" }}</td><td><a href="{% url 'recurring-edit' rule.pk %}">Editează</a></td></tr>
+{% empty %}<tr><td colspan="7">Nu există reguli recurente.</td></tr>{% endfor %}</tbody></table>
+<dialog id="recurring-modal" class="edit-modal" aria-labelledby="recurring-title">
+<h2 id="recurring-title">{% if editing %}Editează regula{% else %}Adaugă o regulă{% endif %}</h2>
+<form method="post">{% csrf_token %}{{ form.as_p }}<div class="modal-actions"><button type="button" data-close-modal>Anulează</button><button type="submit">Salvează</button></div></form>
+</dialog>
+<script>
+(() => {
+    const modal = document.getElementById("recurring-modal");
+    const button = document.getElementById("open-recurring");
+    button.addEventListener("click", () => {
+        {% if editing %}window.location.href = "{% url 'recurring-list' %}?add=1";{% else %}modal.showModal();{% endif %}
+    });
+    function cancel() {
+        {% if editing %}window.location.href = "{% url 'recurring-list' %}";{% else %}modal.close(); button.focus();{% endif %}
+    }
+    modal.querySelector("[data-close-modal]").addEventListener("click", cancel);
+    modal.addEventListener("cancel", event => { event.preventDefault(); cancel(); });
+    {% if editing or form.errors %}modal.showModal(); modal.querySelector('[aria-invalid="true"]')?.focus();{% endif %}
+    if (new URLSearchParams(window.location.search).has("add") && !modal.open) modal.showModal();
+})();
+</script>
+{% endblock %}

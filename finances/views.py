@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.core.exceptions import ValidationError
 from .forms import ExpenseForm, IncomeForm, InstallmentForm
 from .models import Expense, Income, Installment
+from .recurring import pending_recurring
 from dashboard.services import (
     installment_amount_for_month,
     remaining_installments,
@@ -163,6 +164,7 @@ def expense_list(request):
         {
             "form": form,
             "expenses": expenses,
+            "pending_recurring": pending_recurring(request.user, selected_month),
             "selected_month": selected_month,
         },
     )
