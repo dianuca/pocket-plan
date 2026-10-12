@@ -9,7 +9,7 @@
 
 <form
     method="post"
-    action="{% url 'installment-delete' installment.pk %}"
+    action="{% url 'installment-delete' installment.pk %}?month={{ selected_month }}"
 >
     {% csrf_token %}
 

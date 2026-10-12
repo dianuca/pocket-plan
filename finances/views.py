@@ -296,6 +296,11 @@ def installment_edit(request, pk):
         owner=request.user,
     )
 
+    try:
+        selected_month = MonthField().clean(request.GET["month"]) if "month" in request.GET else None
+    except ValidationError:
+        return HttpResponseBadRequest("Lună invalidă.")
+
     if request.method == "POST":
         form = InstallmentForm(
             data=request.POST,
@@ -305,7 +310,7 @@ def installment_edit(request, pk):
         if form.is_valid():
             installment = form.save()
 
-            month = installment.first_due_on.strftime("%Y-%m")
+            month = selected_month or installment.first_due_on.strftime("%Y-%m")
             url = reverse("installment-list")
             return redirect(f"{url}?month={month}")
     else:
@@ -319,7 +324,7 @@ def installment_edit(request, pk):
     return render(
         request,
         template,
-        {"form": form, "installment": installment},
+        {"form": form, "installment": installment, "selected_month": selected_month},
     )
 
 @login_required
@@ -330,7 +335,10 @@ def installment_delete(request, pk):
         owner=request.user,
     )
 
-    month = installment.first_due_on.strftime("%Y-%m")
+    try:
+        month = MonthField().clean(request.GET.get("month", installment.first_due_on.strftime("%Y-%m")))
+    except ValidationError:
+        return HttpResponseBadRequest("Lună invalidă.")
     cancel_url = f"{reverse('installment-list')}?month={month}"
 
     if request.method == "POST":
@@ -348,6 +356,7 @@ def installment_delete(request, pk):
         {
             "installment": installment,
             "cancel_url": cancel_url,
+            "selected_month": month,
         },
     )
 
