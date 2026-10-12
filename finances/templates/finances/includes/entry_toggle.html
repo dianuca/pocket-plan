@@ -1,0 +1,11 @@
+<script>
+(() => {
+    const button = document.getElementById("open-entry-form");
+    const panel = document.getElementById("entry-panel");
+    button.addEventListener("click", () => {
+        panel.hidden = !panel.hidden;
+        button.setAttribute("aria-expanded", String(!panel.hidden));
+        if (!panel.hidden) panel.querySelector('input:not([type="hidden"]), select')?.focus();
+    });
+})();
+</script>
