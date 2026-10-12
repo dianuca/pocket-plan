@@ -91,14 +91,21 @@ Verificare automată: 101 teste trecute, dintre care 23 pentru economii și 7 pe
 
 ## 4. Fond personal lunar — feature/personal-budget
 
-- [ ] Sumă alocată pentru fiecare utilizator și lună; o singură alocare pe lună.
-- [ ] Marchează o cheltuială ca fiind din fondul personal.
-- [ ] Afișează alocat, cheltuit și rămas; permite afișarea unei depășiri.
-- [ ] Alocarea este rezervare de bani, nu cheltuială efectivă.
-- [ ] Cheltuiala personală intră o singură dată în totalul cheltuielilor.
-- [ ] Definește și testează formula pentru banii nealocați după economii și rezerva personală necheltuită.
-- [ ] Inițial fond separat pentru fiecare lună; reportarea este opțională și trebuie convenită înainte de implementare.
-- [ ] Teste pentru editare/ștergere, schimbarea lunii și evitarea dublei numărări.
+- [x] Alocare manuală pentru fiecare utilizator și lună, unică în baza de date.
+- [x] Marchează o cheltuială ca fiind din fondul personal.
+- [x] Afișează alocat, cheltuit și rămas; permite depășirea bugetului.
+- [x] Alocarea rezervă bani, fără a crea o cheltuială.
+- [x] Cheltuiala personală intră o singură dată în totalul cheltuielilor.
+- [x] Rămas personal = alocat − cheltuit personal; bani nealocați = disponibil lunar − max(rămas personal, 0).
+- [x] Cardul principal „Bani disponibili” afișează suma după rezervarea bugetului personal necheltuit; verificat în testul cu economii și rate.
+- [x] Inițial fond separat pentru fiecare lună; reportarea este opțională și trebuie convenită înainte de implementare.
+- [x] Teste pentru editare/ștergere, schimbarea lunii și evitarea dublei numărări.
+
+Implementat — `feature/personal-budget`: pagină „Buget pentru mine” cu alocare manuală în modal, selector lunar în dreapta antetului și listă de cumpărături marcate „Pentru mine”. Alocarea se salvează prin POST și poate fi zero; datele alocărilor existente sunt reutilizate. Lunile sunt independente, fără reportare automată. Cheltuielile personale se numără o singură dată, depășirea alocării este permisă. Secțiunea „Cum funcționează?” rămâne eliminată, iar descrierile sunt generale, fără exemple cu machiaj. Regulile recurente rămân neschimbate; cheltuiala generată poate fi marcată ulterior prin editare.
+
+Verificare: 8 teste pentru bugetul personal; `make test` — 127 de teste trecute pe această ramură. Testele reflectă alocarea manuală și acoperă owner/lună, actualizarea fără duplicate, validare cu păstrarea valorilor, setarea la zero fără ștergerea cheltuielilor, calcule cu economii/rate, depășire, editare/mutare/debifare/ștergere și totalul cheltuielilor afișat. Migrațiile sunt sincronizate. Restant: verificarea vizuală desktop/mobil, modalul (anulare, Escape, salvare, erori) și integrarea în raportul PDF. Raportul este păstrat separat în commit-ul `6ee6eda` de pe `feature/monthly-report`; nu este încă integrat în develop.
+
+Interfață: cardurile „Buget pentru mine” și „Economii” sunt la finalul Rezumatului, alăturate pe desktop și pe un singur rând fiecare pe mobil. Cardul Cheltuieli are total jos pentru înregistrările afișate, fără rate; acestea au propriul total. Graficul economiilor reutilizează calculele și template-ul din Economii; soldul, transferurile și deficitul sunt în card. Rezumatul folosește `dashboard/monthly.py`; calculele personale sunt în `finances/personal_budget.py` și sunt reutilizate de ambele pagini. Aspectul desktop/mobil rămâne de verificat în browser.
 
 ## 5. Închiderea lunii — feature/month-closing
 
@@ -125,6 +132,17 @@ Verificare automată: 101 teste trecute, dintre care 23 pentru economii și 7 pe
 ## 7. Extensii propuse — după funcțiile principale
 
 Acestea sunt idei, nu cerințe deja aprobate pentru implementare.
+
+Încasările planificate au fost retrase la cererea Dianei: lista, modalele, notificarea și modelul sunt eliminate. Migrațiile deja aplicate 0007/0008 sunt păstrate, iar migrația 0009 elimină tabelul planificărilor, fără să afecteze veniturile efective sau alte date financiare. Nu există calendar de încasări sau reportare automată. Verificare după retragere: `make test` — 127 de teste trecute, migrația 0009 aplicată, `manage.py check` fără probleme; aspectul în browser rămâne de verificat.
+
+### Idee salvată — lună de buget personalizată
+
+- [ ] Utilizatorul alege ziua din lună la care începe perioada sa de buget, de exemplu în funcție de ziua salariului.
+- [ ] Pentru ziua 5, perioada este 5 octombrie–4 noiembrie inclusiv; următoarea începe pe 5 noiembrie, fără suprapunere.
+- [ ] Stabilește regulile pentru zilele 29–31, etichetarea perioadelor și schimbarea zilei după existența datelor.
+- [ ] Adaptează împreună filtrele, veniturile, cheltuielile, ratele, economiile, bugetul personal și rapoartele, cu teste pentru limitele perioadelor.
+
+Propunere pentru un pas separat, încă neimplementată. Aplicația folosește în continuare lunile calendaristice. Această idee nu presupune reintroducerea calendarului de încasări planificate.
 
 - [ ] Obiective de economisire și progres.
 - [x] Cheltuieli recurente pentru chirie, utilități și abonamente; fără generări duplicate (generare manuală lunară, autorizată separat).

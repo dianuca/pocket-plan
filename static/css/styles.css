@@ -880,6 +880,56 @@ body:has(.edit-modal[open]) .app-content::before {
     margin-bottom: 24px;
 }
 
+.dashboard-overview {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.personal-budget-actions {
+    margin-left: auto;
+}
+
+
+
+
+.dashboard-overview > .panel {
+    height: 420px;
+    overflow-y: auto;
+}
+
+.dashboard-overview .panel-heading {
+    flex-wrap: wrap;
+}
+
+.dashboard-overview > .panel > .savings-evolution-scroll {
+    flex-shrink: 1;
+    min-height: 210px;
+}
+
+.overview-metrics {
+    margin: 8px 0;
+}
+
+.overview-metrics > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.overview-metrics dd {
+    margin: 0;
+    font-weight: 700;
+}
+
+.overview-note,
+.overview-transfers {
+    font-size: 14px;
+    color: var(--muted);
+}
+
 .budget-charts .panel {
     min-width: 0;
 }

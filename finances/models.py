@@ -4,6 +4,20 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from decimal import Decimal
 
 
+class PersonalBudget(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    month = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2,
+                                 validators=[MinValueValidator(Decimal("0.00"))])
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "month"], name="unique_personal_budget_month"),
+            models.CheckConstraint(condition=models.Q(month__day=1), name="personal_budget_month_first_day"),
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name="personal_budget_nonnegative"),
+        ]
+
+
 class SavingsAccount(models.Model):
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2)
@@ -41,6 +55,8 @@ class Income(models.Model):
         return f"{self.source}: {self.amount}"
 
 class Expense(models.Model):
+    from_personal_budget = models.BooleanField(default=False)
+
     class Category(models.TextChoices):
         RENT = "rent", "Chirie"
         UTILITIES = "utilities", "Utilități"

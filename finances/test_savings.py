@@ -49,15 +49,19 @@ class SavingsTests(TestCase):
         for url in ["/finances/savings/?month=2026-10", "/dashboard/?month=2026-10"]:
             response = self.client.get(url)
             self.assertEqual(response.context["savings_deficit"], Decimal("50.00"))
-            self.assertContains(response, 'class="savings-deficit"')
+            if url.startswith("/finances/"):
+                self.assertContains(response, 'class="savings-deficit"')
+                self.assertContains(response, "De acoperit: 50.00 lei")
+            else:
+                self.assertContains(response, "De acoperit pentru revenirea la zero: 50.00 lei")
             self.assertContains(response, 'class="savings-negative"')
-            self.assertContains(response, "De acoperit: 50.00 lei")
         self.movement("deposit", "50.00", date(2026, 10, 2))
         for url in ["/finances/savings/?month=2026-10", "/dashboard/?month=2026-10"]:
             response = self.client.get(url)
             self.assertEqual(response.context["savings_balance"], Decimal("0.00"))
             self.assertNotContains(response, 'class="savings-deficit"')
-            self.assertNotContains(response, 'class="savings-negative"')
+            self.assertNotContains(response, "De acoperit:")
+            self.assertNotContains(response, "De acoperit pentru revenirea la zero:")
 
     def test_history_filters_preserve_running_balance_and_owner_isolation(self):
         self.movement("deposit", "200.00", date(2026, 9, 1))
