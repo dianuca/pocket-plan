@@ -80,7 +80,7 @@ def income_edit(request, pk):
     else:
         form = IncomeForm(instance=income)
 
-        template = "finances/income_edit.html"
+    template = "finances/income_edit.html"
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         template = "finances/includes/income_edit_form.html"
