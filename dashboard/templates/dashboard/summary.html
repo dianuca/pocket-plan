@@ -9,10 +9,13 @@
         </div>
 
     <div class="savings-actions">
+        <button type="button" id="open-budget-settings" class="savings-secondary-action" aria-haspopup="dialog" aria-controls="budget-settings-modal">Luna mea</button>
         <a href="{% url 'monthly-report-pdf' %}?month={{ selected_month }}" target="_blank" rel="noopener" class="savings-secondary-action" aria-label="Raport lunar PDF (tab nou)">Raport lunar</a>
         {% include "includes/month_picker.html" %}
     </div>
     </div>
+
+    {% include "finances/includes/budget_settings_modal.html" %}
 
     <section class="summary-cards" aria-label="Totaluri lunare">
         <article class="summary-card">
@@ -132,7 +135,7 @@
                             <span>{{ item.name }}</span>
                             <small>
                                 {{ item.remaining }} rate rămase,
-                                inclusiv luna selectată
+                                înaintea primei scadențe din perioadă
                             </small>
                         </div>
                         <strong>{{ item.amount|floatformat:2 }} lei</strong>

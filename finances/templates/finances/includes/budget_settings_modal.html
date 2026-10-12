@@ -1,0 +1,28 @@
+<dialog id="budget-settings-modal" class="edit-modal" aria-labelledby="budget-settings-title" data-has-errors="{{ settings_form.errors|yesno:'true,false' }}">
+    <h2 id="budget-settings-title">Luna mea</h2>
+    <p>Alege ziua în care începe perioada ta de buget. Ziua 5 înseamnă, de exemplu, 5 octombrie–4 noiembrie.</p>
+    <p>Schimbarea recalculează perioadele din istoric, fără să modifice datele sau sumele. Alocările personale rămân asociate lunii de început.</p>
+    <form method="post" action="{% url 'budget-settings' %}?month={{ selected_month }}">
+        {% csrf_token %}
+        <input type="hidden" name="in_modal" value="1">
+        {{ settings_form.as_p }}
+        <div class="modal-actions">
+            <button type="button" data-close-modal>Anulează</button>
+            <button type="submit">Salvează ziua</button>
+        </div>
+    </form>
+</dialog>
+<script>
+(() => {
+    const button = document.getElementById("open-budget-settings");
+    const modal = document.getElementById("budget-settings-modal");
+    function openSettings() {
+        modal.showModal();
+        modal.querySelector('input[name="budget-settings-start_day"]')?.focus();
+    }
+    button.addEventListener("click", openSettings);
+    modal.querySelector("[data-close-modal]").addEventListener("click", () => modal.close());
+    modal.addEventListener("close", () => button.focus());
+    if (modal.dataset.hasErrors === "true") openSettings();
+})();
+</script>

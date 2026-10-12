@@ -11,6 +11,7 @@ from django.urls import reverse
 
 from dashboard.forms import MonthField
 from .models import Expense, PersonalBudget
+from .periods import budget_period, month_key, period_context, period_month
 
 
 class PersonalBudgetForm(forms.Form):
@@ -20,8 +21,8 @@ class PersonalBudgetForm(forms.Form):
 
 
 def personal_expenses(owner, month):
-    return Expense.objects.filter(owner=owner, from_personal_budget=True,
-                                  paid_on__year=month.year, paid_on__month=month.month)
+    start, end = budget_period(owner, month_key(month))
+    return Expense.objects.filter(owner=owner, from_personal_budget=True, paid_on__range=(start, end))
 
 
 def personal_budget_summary(owner, selected_month):
@@ -39,7 +40,7 @@ def personal_budget_summary(owner, selected_month):
 @login_required
 def personal_budget_list(request):
     try:
-        selected_month = MonthField().clean(request.GET.get("month", date.today().strftime("%Y-%m")))
+        selected_month = MonthField().clean(request.GET.get("month", period_month(request.user)))
     except ValidationError:
         return HttpResponseBadRequest("Lună invalidă.")
     month = date.fromisoformat(f"{selected_month}-01")
@@ -51,7 +52,7 @@ def personal_budget_list(request):
                                                 defaults={"amount": form.cleaned_data["amount"]})
         return redirect(f"{reverse('personal-budget')}?month={selected_month}")
     return render(request, "finances/personal_budget.html", {
-        **summary,
+        **summary, **period_context(request.user, selected_month),
         "selected_month": selected_month, "form": form,
         "personal_expenses": personal_expenses(request.user, month).order_by("-paid_on", "-pk"),
     })

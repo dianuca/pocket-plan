@@ -4,6 +4,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from decimal import Decimal
 
 
+class BudgetPreference(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    start_day = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(31)])
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(start_day__gte=1, start_day__lte=31), name="budget_start_day_valid")]
+
+
 class PersonalBudget(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     month = models.DateField()

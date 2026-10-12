@@ -41,7 +41,8 @@ def build_monthly_report_pdf(context):
         return f"{value:.2f}".replace(".", ",") + " lei"
 
     story = [paragraph("RAPORT LUNAR", title),
-             paragraph(f"PocketPlan | Perioada: {month} | Moneda: lei", subtitle),
+             paragraph(f"PocketPlan | Luna: {month} | Moneda: lei", subtitle),
+             paragraph(f"Perioada: {context['period_start']:%d.%m.%Y} – {context['period_end']:%d.%m.%Y}", subtitle),
              paragraph("Situație calculată din datele curente ale lunii. Raportul nu închide luna.")]
 
     def table(title, headers, rows, widths, empty, emphasize_last=False):
@@ -90,10 +91,10 @@ def build_monthly_report_pdf(context):
     table("Cheltuieli", ["Data", "Denumire", "Categorie", "Sumă"],
           ((item.paid_on.strftime("%d.%m.%Y"), item.name + (" (Pentru mine)" if item.from_personal_budget else ""), item.get_category_display(), money(item.amount)) for item in context["report_expenses"]),
           [.18, .34, .22, .26], "Nu există cheltuieli în această lună.")
-    table("Rate active", ["Denumire", "Sumă lunară", "Rate rămase"],
+    table("Rate active", ["Denumire", "Sumă în perioadă", "Rate rămase"],
           ((item["name"], money(item["amount"]), item["remaining"]) for item in context["installment_items"]),
           [.45, .3, .25], "Nu există rate active în această lună.")
-    story.append(paragraph("Ratele rămase sunt calculate calendaristic și nu confirmă plata."))
+    story.append(paragraph("Ratele rămase sunt calculate înaintea primei scadențe din perioadă și nu confirmă plata."))
     table("Buget pentru mine", ["Indicator", "Sumă"], [
         ("Alocat", money(context["personal_allocated"])),
         ("Cheltuit pentru mine", money(context["personal_spent"])),

@@ -1,4 +1,3 @@
-from datetime import date
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
@@ -9,17 +8,14 @@ from django.core.exceptions import ValidationError
 from .forms import ExpenseForm, IncomeForm, InstallmentForm
 from .models import Expense, Income, Installment
 from .recurring import pending_recurring
-from dashboard.services import (
-    installment_amount_for_month,
-    remaining_installments,
-) 
+from .periods import budget_period, installment_for_period, period_context, period_month
 
 
 @login_required
 def income_list(request):
     selected_month = request.GET.get(
         "month",
-        date.today().strftime("%Y-%m"),
+        period_month(request.user),
     )
 
     try:
@@ -35,20 +31,19 @@ def income_list(request):
             income.owner = request.user
             income.save()
 
-            month = income.received_on.strftime("%Y-%m")
+            month = period_month(request.user, income.received_on)
             url = reverse("income-list")
             return redirect(f"{url}?month={month}")
     else:
         form = IncomeForm(initial={
-            "received_on": date.fromisoformat(f"{selected_month}-01"),
+            "received_on": budget_period(request.user, selected_month)[0],
         })
 
-    year, month = map(int, selected_month.split("-"))
+    start, end = budget_period(request.user, selected_month)
 
     incomes = Income.objects.filter(
         owner=request.user,
-        received_on__year=year,
-        received_on__month=month,
+        received_on__range=(start, end),
     ).order_by("-received_on", "-pk")
 
     return render(
@@ -58,6 +53,7 @@ def income_list(request):
             "form": form,
             "incomes": incomes,
             "selected_month": selected_month,
+            **period_context(request.user, selected_month),
         },
     )
 
@@ -75,7 +71,7 @@ def income_edit(request, pk):
         if form.is_valid():
             income = form.save()
 
-            month = income.received_on.strftime("%Y-%m")
+            month = period_month(request.user, income.received_on)
             url = reverse("income-list")
             return redirect(f"{url}?month={month}")
     else:
@@ -100,7 +96,7 @@ def income_delete(request, pk):
         owner=request.user,
     )
 
-    month = income.received_on.strftime("%Y-%m")
+    month = period_month(request.user, income.received_on)
     cancel_url = f"{reverse('income-list')}?month={month}"
 
     if request.method == "POST":
@@ -126,7 +122,7 @@ def income_delete(request, pk):
 def expense_list(request):
     selected_month = request.GET.get(
         "month",
-        date.today().strftime("%Y-%m"),
+        period_month(request.user),
     )
 
     try:
@@ -142,20 +138,19 @@ def expense_list(request):
             expense.owner = request.user
             expense.save()
 
-            month = expense.paid_on.strftime("%Y-%m")
+            month = period_month(request.user, expense.paid_on)
             url = reverse("expense-list")
             return redirect(f"{url}?month={month}")
     else:
         form = ExpenseForm(initial={
-            "paid_on": date.fromisoformat(f"{selected_month}-01"),
+            "paid_on": budget_period(request.user, selected_month)[0],
         })
 
-    year, month = map(int, selected_month.split("-"))
+    start, end = budget_period(request.user, selected_month)
 
     expenses = Expense.objects.filter(
         owner=request.user,
-        paid_on__year=year,
-        paid_on__month=month,
+        paid_on__range=(start, end),
     ).order_by("-paid_on", "-pk")
 
     return render(
@@ -166,6 +161,7 @@ def expense_list(request):
             "expenses": expenses,
             "pending_recurring": pending_recurring(request.user, selected_month),
             "selected_month": selected_month,
+            **period_context(request.user, selected_month),
         },
     )
 
@@ -183,7 +179,7 @@ def expense_edit(request, pk):
         if form.is_valid():
             expense = form.save()
 
-            month = expense.paid_on.strftime("%Y-%m")
+            month = period_month(request.user, expense.paid_on)
             url = reverse("expense-list")
             return redirect(f"{url}?month={month}")
     else:
@@ -208,7 +204,7 @@ def expense_delete(request, pk):
         owner=request.user,
     )
 
-    month = expense.paid_on.strftime("%Y-%m")
+    month = period_month(request.user, expense.paid_on)
     cancel_url = f"{reverse('expense-list')}?month={month}"
 
     if request.method == "POST":
@@ -233,7 +229,7 @@ def expense_delete(request, pk):
 def installment_list(request):
     selected_month = request.GET.get(
         "month",
-        date.today().strftime("%Y-%m"),
+        period_month(request.user),
     )
 
     try:
@@ -253,7 +249,7 @@ def installment_list(request):
             return redirect(f"{url}?month={selected_month}")
     else:
         form = InstallmentForm(initial={
-            "first_due_on": date.fromisoformat(f"{selected_month}-01"),
+            "first_due_on": budget_period(request.user, selected_month)[0],
         })
 
     installments = Installment.objects.filter(
@@ -262,23 +258,10 @@ def installment_list(request):
 
     installment_rows = []
 
+    start, end = budget_period(request.user, selected_month)
     for installment in installments:
-        first_month = installment.first_due_on.strftime("%Y-%m")
-
-        installment_rows.append({
-            "installment": installment,
-            "amount_due": installment_amount_for_month(
-                monthly_amount=installment.monthly_amount,
-                first_month=first_month,
-                number_of_installments=installment.number_of_installments,
-                selected_month=selected_month,
-            ),
-            "remaining": remaining_installments(
-                first_month=first_month,
-                number_of_installments=installment.number_of_installments,
-                selected_month=selected_month,
-            ),
-        })
+        amount, remaining = installment_for_period(installment, start, end)
+        installment_rows.append({"installment": installment, "amount_due": amount, "remaining": remaining})
 
     return render(
         request,
@@ -287,6 +270,7 @@ def installment_list(request):
             "form": form,
             "installment_rows": installment_rows,
             "selected_month": selected_month,
+            **period_context(request.user, selected_month),
         },
     )
 
@@ -312,7 +296,7 @@ def installment_edit(request, pk):
         if form.is_valid():
             installment = form.save()
 
-            month = selected_month or installment.first_due_on.strftime("%Y-%m")
+            month = selected_month or period_month(request.user, installment.first_due_on)
             url = reverse("installment-list")
             return redirect(f"{url}?month={month}")
     else:
@@ -338,7 +322,7 @@ def installment_delete(request, pk):
     )
 
     try:
-        month = MonthField().clean(request.GET.get("month", installment.first_due_on.strftime("%Y-%m")))
+        month = MonthField().clean(request.GET.get("month", period_month(request.user, installment.first_due_on)))
     except ValidationError:
         return HttpResponseBadRequest("Lună invalidă.")
     cancel_url = f"{reverse('installment-list')}?month={month}"
