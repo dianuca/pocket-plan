@@ -8,7 +8,10 @@
             <p>Bugetul tău, dintr-o privire.</p>
         </div>
 
-    {% include "includes/month_picker.html" %}
+    <div class="savings-actions">
+        <a href="{% url 'monthly-report-pdf' %}?month={{ selected_month }}" target="_blank" rel="noopener" class="savings-secondary-action" aria-label="Raport lunar PDF (tab nou)">Raport lunar</a>
+        {% include "includes/month_picker.html" %}
+    </div>
     </div>
 
     <section class="summary-cards" aria-label="Totaluri lunare">

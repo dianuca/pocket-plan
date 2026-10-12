@@ -103,7 +103,7 @@ Verificare automată: 101 teste trecute, dintre care 23 pentru economii și 7 pe
 
 Implementat — `feature/personal-budget`: pagină „Buget pentru mine” cu alocare manuală în modal, selector lunar în dreapta antetului și listă de cumpărături marcate „Pentru mine”. Alocarea se salvează prin POST și poate fi zero; datele alocărilor existente sunt reutilizate. Lunile sunt independente, fără reportare automată. Cheltuielile personale se numără o singură dată, depășirea alocării este permisă. Secțiunea „Cum funcționează?” rămâne eliminată, iar descrierile sunt generale, fără exemple cu machiaj. Regulile recurente rămân neschimbate; cheltuiala generată poate fi marcată ulterior prin editare.
 
-Verificare: 8 teste pentru bugetul personal; `make test` — 127 de teste trecute pe această ramură. Testele reflectă alocarea manuală și acoperă owner/lună, actualizarea fără duplicate, validare cu păstrarea valorilor, setarea la zero fără ștergerea cheltuielilor, calcule cu economii/rate, depășire, editare/mutare/debifare/ștergere și totalul cheltuielilor afișat. Migrațiile sunt sincronizate. Restant: verificarea vizuală desktop/mobil, modalul (anulare, Escape, salvare, erori) și integrarea în raportul PDF. Raportul este păstrat separat în commit-ul `6ee6eda` de pe `feature/monthly-report`; nu este încă integrat în develop.
+Verificare la integrarea fondului personal: 8 teste specifice, `make test` — 127 de teste trecute. Testele reflectă alocarea manuală și acoperă owner/lună, actualizarea fără duplicate, validare cu păstrarea valorilor, setarea la zero fără ștergerea cheltuielilor, calcule cu economii/rate, depășire, editare/mutare/debifare/ștergere și totalul cheltuielilor afișat. Fondul este integrat local în develop; Diana a confirmat verificarea pe mobil. Verificarea completă a modalelor (anulare, Escape, salvare, erori) rămâne distinctă. Integrarea PDF este descrisă la etapa 6.
 
 Interfață: cardurile „Buget pentru mine” și „Economii” sunt la finalul Rezumatului, alăturate pe desktop și pe un singur rând fiecare pe mobil. Cardul Cheltuieli are total jos pentru înregistrările afișate, fără rate; acestea au propriul total. Graficul economiilor reutilizează calculele și template-ul din Economii; soldul, transferurile și deficitul sunt în card. Rezumatul folosește `dashboard/monthly.py`; calculele personale sunt în `finances/personal_budget.py` și sunt reutilizate de ambele pagini. Aspectul desktop/mobil rămâne de verificat în browser.
 
@@ -122,7 +122,13 @@ Interfață: cardurile „Buget pentru mine” și „Economii” sunt la finalu
 
 ## 6. PDF și istoric — feature/monthly-report-pdf
 
+Pas curent — `feature/report-personal-budget`: raportul PDF existent este reutilizat împreună cu fondul personal din develop. Butonul „Raport lunar” din Rezumat deschide PDF-ul lunii selectate într-un tab nou. Pagina HTML rămâne disponibilă la `/dashboard/report/`. Ambele folosesc `dashboard/monthly.py`, aceleași calcule ca Rezumatul: alocat, cheltuit, rămas, rezervă necheltuită și bani disponibili. Cumpărăturile personale sunt marcate „Pentru mine” în tabelul cheltuielilor, fără adăugarea lor a doua oară în total. Disponibilul scade doar cu rezerva personală necheltuită. Raportul include venituri, cheltuieli, rate active și economii. Este dinamic, fără snapshot, închiderea lunii sau blocarea datelor.
+
+Verificare: 7 teste pentru raport; `make test` — 134 de teste trecute, `manage.py check` fără probleme și migrații sincronizate. Testele citesc PDF-ul și acoperă owner/lună, alocare zero, depășire, actualizarea datelor, calcule comune, diacritice, lună fără date, antete repetate și paginare cu multe cheltuieli. ReportLab este dependența PDF; pypdf este dependență de test în `requirements-dev.txt`, fonturile și licența sunt incluse. Restant: deschiderea în browser și verificarea vizuală a PDF-ului, inclusiv secțiunea personală și tabelele pe mai multe pagini. Acest pas nu bifează criteriile pentru rapoarte din snapshot de mai jos. Diana a confirmat verificarea fondului personal pe mobil înaintea acestui pas.
+
 - [ ] Istoric al lunilor închise și vizualizarea fiecărui raport.
+Stil PDF ales de Diana: raport clasic alb-negru, titlu centrat, antete bold, sume aliniate la dreapta, linii discrete între rânduri și totalul disponibil evidențiat. Calculele și informațiile rămân aceleași. Aspectul nou trebuie confirmat în browser.
+
 - [ ] Descărcare PDF din snapshot, inclusiv pentru luni fără date.
 - [ ] Diacritice, monedă, tabele lizibile și paginare.
 - [ ] Raportul include luna, totalurile și detaliile financiare convenite.

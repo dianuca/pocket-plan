@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Raport {{ selected_month }} | PocketPlan{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div><h1>Raport lunar · {{ selected_month }}</h1><p>Raport curent pentru {{ user.username }}. Se actualizează când modifici datele lunii.</p></div>
+    <div class="savings-actions"><a href="{% url 'monthly-summary' %}?month={{ selected_month }}">Înapoi la rezumat</a>{% include "includes/month_picker.html" %}</div>
+</div>
+<section class="summary-cards" aria-label="Totaluri raport">
+    <article class="summary-card"><p>Venituri</p><strong>{{ income|floatformat:2 }} lei</strong></article>
+    <article class="summary-card"><p>Cheltuieli, inclusiv rate</p><strong>{{ expenses|floatformat:2 }} lei</strong></article>
+    <article class="summary-card"><p>Bani disponibili</p><strong {% if unallocated_balance < 0 %}class="savings-negative"{% endif %}>{{ unallocated_balance|floatformat:2 }} lei</strong></article>
+</section>
+<section class="panel report-section" aria-labelledby="report-income-title">
+<h2 id="report-income-title">Venituri</h2>
+<div class="history-table-scroll"><table><thead><tr><th>Data</th><th>Sursa</th><th>Sumă</th></tr></thead><tbody>
+{% for item in report_incomes %}<tr><td>{{ item.received_on|date:"d.m.Y" }}</td><td>{{ item.source }}</td><td>{{ item.amount|floatformat:2 }} lei</td></tr>
+{% empty %}<tr><td colspan="3">Nu există venituri în această lună.</td></tr>{% endfor %}</tbody></table></div>
+<p>Total venituri: <strong>{{ income|floatformat:2 }} lei</strong></p></section>
+<section class="panel report-section" aria-labelledby="report-expense-title">
+<h2 id="report-expense-title">Cheltuieli</h2>
+<div class="history-table-scroll"><table><thead><tr><th>Data</th><th>Nume</th><th>Categorie</th><th>Sumă</th></tr></thead><tbody>
+{% for item in report_expenses %}<tr><td>{{ item.paid_on|date:"d.m.Y" }}</td><td>{{ item.name }}{% if item.from_personal_budget %} · Pentru mine{% endif %}</td><td>{{ item.get_category_display }}</td><td>{{ item.amount|floatformat:2 }} lei</td></tr>
+{% empty %}<tr><td colspan="4">Nu există cheltuieli în această lună.</td></tr>{% endfor %}</tbody></table></div>
+<p>Total fără rate: <strong>{{ direct_expenses|floatformat:2 }} lei</strong></p></section>
+<section class="panel report-section" aria-labelledby="report-installment-title">
+<h2 id="report-installment-title">Rate active</h2>
+<div class="history-table-scroll"><table><thead><tr><th>Nume</th><th>Rate rămase</th><th>Sumă lunară</th></tr></thead><tbody>
+{% for item in installment_items %}<tr><td>{{ item.name }}</td><td>{{ item.remaining }}</td><td>{{ item.amount|floatformat:2 }} lei</td></tr>
+{% empty %}<tr><td colspan="3">Nu există rate active în această lună.</td></tr>{% endfor %}</tbody></table></div>
+<p>Total rate: <strong>{{ installment_total|floatformat:2 }} lei</strong>. Ratele rămase includ luna selectată și reprezintă un calcul calendaristic.</p></section>
+<section class="panel report-section" aria-labelledby="report-personal-title">
+<h2 id="report-personal-title">Buget pentru mine</h2>
+<p>Alocat: <strong>{{ personal_allocated|floatformat:2 }} lei</strong> · Cheltuit: <strong>{{ personal_spent|floatformat:2 }} lei</strong> · Rămas: <strong {% if personal_remaining < 0 %}class="savings-negative"{% endif %}>{{ personal_remaining|floatformat:2 }} lei</strong></p>
+{% if personal_overspent %}<p>Buget depășit cu {{ personal_overspent|floatformat:2 }} lei.</p>{% endif %}
+<p>Cheltuielile personale sunt deja incluse în totalul cheltuielilor. Alocarea rezervă bani, fără a crea o cheltuială.</p>
+</section>
+<section class="panel report-section" aria-labelledby="report-savings-title">
+<h2 id="report-savings-title">Economii</h2>
+<div class="history-table-scroll"><table><thead><tr><th>Data</th><th>Tip</th><th>Descriere</th><th>Sumă</th></tr></thead><tbody>
+{% for item in report_transfers %}<tr><td>{{ item.occurred_on|date:"d.m.Y" }}</td><td>{{ item.get_kind_display }}</td><td>{{ item.description }}</td><td>{{ item.amount|floatformat:2 }} lei</td></tr>
+{% empty %}<tr><td colspan="4">Nu există transferuri în această lună.</td></tr>{% endfor %}</tbody></table></div>
+<p>Depuneri: <strong>{{ savings_deposits|floatformat:2 }} lei</strong> · Retrageri: <strong>{{ savings_withdrawals|floatformat:2 }} lei</strong></p>
+<p>Sold acumulat la sfârșitul lunii: <strong {% if savings_balance < 0 %}class="savings-negative"{% endif %}>{{ savings_balance|floatformat:2 }} lei</strong></p>
+{% if savings_deficit %}<p class="savings-deficit">De acoperit: {{ savings_deficit|floatformat:2 }} lei pentru revenirea la zero.</p>{% endif %}
+</section>
+<section class="panel report-section" aria-labelledby="report-final-title"><h2 id="report-final-title">Calculul disponibilului</h2>
+<p>Bani disponibili = venituri − cheltuieli (inclusiv rate) − depuneri + retrageri − rezerva personală necheltuită</p>
+<p>{{ income|floatformat:2 }} − {{ expenses|floatformat:2 }} − {{ savings_deposits|floatformat:2 }} + {{ savings_withdrawals|floatformat:2 }} − {{ personal_reserved|floatformat:2 }} = <strong>{{ unallocated_balance|floatformat:2 }} lei</strong></p>
+<p>Transferurile în economii sunt separate de veniturile și cheltuielile de consum.</p></section>
+{% endblock %}
