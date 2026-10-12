@@ -134,6 +134,23 @@ class IncomePageTests(TestCase):
         self.assertNotContains(response, "Venit alt utilizator")
 
 class IncomeEditTests(TestCase):
+    def test_invalid_edit_returns_errors_without_changing_income(self):
+        for headers in [{}, {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}]:
+            with self.subTest(headers=headers):
+                response = self.client.post(
+                    f"/finances/incomes/{self.income.pk}/edit/",
+                    {"source": "Corectat", "amount": "0.00", "received_on": "2026-10-10"},
+                    **headers,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("amount", response.context["form"].errors)
+                self.assertContains(response, 'value="Corectat"')
+                template = "finances/includes/income_edit_form.html" if headers else "finances/income_edit.html"
+                self.assertTemplateUsed(response, template)
+                self.income.refresh_from_db()
+                self.assertNotEqual(self.income.amount, Decimal("0.00"))
+                self.assertNotEqual(self.income.source, "Corectat")
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser",
@@ -371,6 +388,23 @@ class ExpensePageTests(TestCase):
         )
 
 class ExpenseEditTests(TestCase):
+    def test_invalid_edit_preserves_expense_and_displays_errors(self):
+        for headers in [{}, {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}]:
+            with self.subTest(headers=headers):
+                response = self.client.post(
+                    f"/finances/expenses/{self.expense.pk}/edit/",
+                    {"name": "Corectat", "category": "food", "amount": "-10.00", "paid_on": "2026-10-10"},
+                    **headers,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("amount", response.context["form"].errors)
+                self.assertContains(response, 'value="Corectat"')
+                template = "finances/includes/expense_edit_form.html" if headers else "finances/expense_edit.html"
+                self.assertTemplateUsed(response, template)
+                self.expense.refresh_from_db()
+                self.assertEqual(self.expense.amount, Decimal("50.00"))
+                self.assertEqual(self.expense.name, "Netflix")
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser",
@@ -669,6 +703,26 @@ class InstallmentPageTests(TestCase):
         self.assertEqual(rows[0]["remaining"], 2)
 
 class InstallmentEditTests(TestCase):
+    def test_invalid_edit_preserves_schedule_and_displays_errors(self):
+        for headers in [{}, {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}]:
+            with self.subTest(headers=headers):
+                response = self.client.post(
+                    f"/finances/installments/{self.installment.pk}/edit/",
+                    {"name": "Corectat", "monthly_amount": "0.00",
+                     "first_due_on": "2026-11-15", "number_of_installments": "0"},
+                    **headers,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("monthly_amount", response.context["form"].errors)
+                self.assertIn("number_of_installments", response.context["form"].errors)
+                self.assertContains(response, 'value="Corectat"')
+                template = "finances/includes/installment_edit_form.html" if headers else "finances/installment_edit.html"
+                self.assertTemplateUsed(response, template)
+                self.installment.refresh_from_db()
+                self.assertEqual(self.installment.monthly_amount, Decimal("200.00"))
+                self.assertEqual(self.installment.number_of_installments, 3)
+                self.assertEqual(self.installment.first_due_on, date(2026, 10, 15))
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser",

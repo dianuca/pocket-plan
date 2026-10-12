@@ -9,18 +9,21 @@
             <p>Urmărește unde se duc banii în fiecare lună.</p>
         </div>
 
-        {% include "includes/month_picker.html" %}
+        <div class="savings-actions">
+            <button type="button" id="open-entry-form" class="compact-button" aria-controls="entry-panel" aria-expanded="{{ form.errors|yesno:'true,false' }}">+ Adaugă o cheltuială</button>
+            {% include "includes/month_picker.html" %}
+        </div>
     </div>
 
-    <details class="entry-panel" {% if form.errors %}open{% endif %}>
-        <summary> Adaugă o cheltuială</summary>
+    <section id="entry-panel" class="entry-panel" {% if not form.errors %}hidden{% endif %} aria-label="Adaugă o cheltuială">
 
         <form method="post" class="entry-form">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit">Salvează cheltuiala</button>
         </form>
-    </details>
+    </section>
+    {% include "finances/includes/entry_toggle.html" %}
 
     <h2>Cheltuielile lunii</h2>
 
