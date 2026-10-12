@@ -134,6 +134,23 @@ class IncomePageTests(TestCase):
         self.assertNotContains(response, "Venit alt utilizator")
 
 class IncomeEditTests(TestCase):
+    def test_invalid_edit_returns_errors_without_changing_income(self):
+        for headers in [{}, {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}]:
+            with self.subTest(headers=headers):
+                response = self.client.post(
+                    f"/finances/incomes/{self.income.pk}/edit/",
+                    {"source": "Corectat", "amount": "0.00", "received_on": "2026-10-10"},
+                    **headers,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("amount", response.context["form"].errors)
+                self.assertContains(response, 'value="Corectat"')
+                template = "finances/includes/income_edit_form.html" if headers else "finances/income_edit.html"
+                self.assertTemplateUsed(response, template)
+                self.income.refresh_from_db()
+                self.assertNotEqual(self.income.amount, Decimal("0.00"))
+                self.assertNotEqual(self.income.source, "Corectat")
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser",
