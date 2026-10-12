@@ -50,13 +50,13 @@
                     <td>{{ row.remaining }}</td>
                     <td>
                     <a
-                        href="{% url 'installment-edit' row.installment.pk %}"
+                        href="{% url 'installment-edit' row.installment.pk %}?month={{ selected_month }}"
                         class="edit-modal-link"
                     >
                         Editează
                     </a>
                     <a
-                        href="{% url 'installment-delete' row.installment.pk %}"
+                        href="{% url 'installment-delete' row.installment.pk %}?month={{ selected_month }}"
                         class="delete-modal-link"
                     >
                         Șterge

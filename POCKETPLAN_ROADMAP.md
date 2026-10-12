@@ -50,6 +50,8 @@ Acestea au fost implementate în conversație; nu reprezintă o verificare a ult
 
 ### Eroare la ultima cheltuială
 
+Corecție suplimentară pentru rate: editarea și ștergerea din listă păstrează luna consultată, inclusiv formularele încărcate în modal și anularea ștergerii. Parametrul lunii este validat înainte de modificarea datelor. Linkurile fără lună păstrează comportamentul anterior. Verificare automată: 108 teste trecute. De verificat în browser: editare invalidă/validă, anulare și confirmare ștergere într-o lună diferită de prima scadență. Revenirea după refresh din raportul inițial rămâne de reprodus.
+
 - [ ] Obține acțiunea exactă, traceback-ul și pașii de reproducere (adăugare/editare/ștergere).
 - [ ] Verifică cazul fără cheltuieli și cazul cu o singură cheltuială.
 - [ ] Corectează cauza și adaugă test de regresie.

@@ -703,6 +703,22 @@ class InstallmentPageTests(TestCase):
         self.assertEqual(rows[0]["remaining"], 2)
 
 class InstallmentEditTests(TestCase):
+    def test_edit_preserves_consulted_month_in_modal_and_redirect(self):
+        url = f"/finances/installments/{self.installment.pk}/edit/?month=2027-02"
+        response = self.client.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertContains(response, f'action="{url}"')
+        response = self.client.post(url, {
+            "name": "Laptop", "monthly_amount": "250.00",
+            "first_due_on": "2026-11-15", "number_of_installments": "4",
+        })
+        self.assertRedirects(response, "/finances/installments/?month=2027-02")
+
+    def test_invalid_month_rejected_before_edit(self):
+        response = self.client.post(f"/finances/installments/{self.installment.pk}/edit/?month=2026-13")
+        self.assertEqual(response.status_code, 400)
+        self.installment.refresh_from_db()
+        self.assertEqual(self.installment.monthly_amount, Decimal("200.00"))
+
     def test_invalid_edit_preserves_schedule_and_displays_errors(self):
         for headers in [{}, {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}]:
             with self.subTest(headers=headers):
@@ -787,6 +803,19 @@ class InstallmentEditTests(TestCase):
         )
 
 class InstallmentDeleteTests(TestCase):
+    def test_delete_preserves_consulted_month_and_cancel_url(self):
+        url = f"/finances/installments/{self.installment.pk}/delete/?month=2027-02"
+        response = self.client.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertContains(response, f'action="{url}"')
+        self.assertEqual(response.context["cancel_url"], "/finances/installments/?month=2027-02")
+        self.assertRedirects(self.client.post(url), "/finances/installments/?month=2027-02")
+        self.assertFalse(Installment.objects.filter(pk=self.installment.pk).exists())
+
+    def test_invalid_month_prevents_delete(self):
+        response = self.client.post(f"/finances/installments/{self.installment.pk}/delete/?month=invalid")
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Installment.objects.filter(pk=self.installment.pk).exists())
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser",

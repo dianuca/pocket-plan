@@ -2,7 +2,7 @@
 
 <form
     method="post"
-    action="{% url 'installment-edit' installment.pk %}"
+    action="{% url 'installment-edit' installment.pk %}{% if selected_month %}?month={{ selected_month }}{% endif %}"
 >
     {% csrf_token %}
     {{ form.as_p }}
